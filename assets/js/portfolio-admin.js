@@ -1,6 +1,8 @@
 'use strict';
 
 (function () {
+  if (!new URLSearchParams(window.location.search).has('admin')) return;
+
   // ── IndexedDB ─────────────────────────────────────────
   let _db = null;
 
