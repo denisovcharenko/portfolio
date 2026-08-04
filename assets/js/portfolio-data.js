@@ -2,20 +2,17 @@ window.__portfolioData = [
   {
     idx: 2, color: '#7ae8a5', name: 'Burger',
     thumbnail: 'assets/media/cases/case-burger.webp',
-    content: [],
-    description: '',
+    content: [], description: '',
   },
   {
     idx: 6, color: '#7A7AE8', name: 'Tattoo',
     thumbnail: 'assets/media/cases/case-tattoo.webp',
-    content: [],
-    description: '',
+    content: [], description: '',
   },
   {
     idx: 13, color: '#D080F0', name: 'Barber',
     thumbnail: 'assets/media/cases/case-barber.webp',
-    content: [],
-    description: '',
+    content: [], description: '',
   },
   {
     idx: 17, color: '#f08080', name: 'Oyvdoma',
@@ -34,19 +31,16 @@ window.__portfolioData = [
   {
     idx: 22, color: '#9AFFB5', name: 'Sauced',
     thumbnail: 'assets/media/cases/case-sauced.webp',
-    content: [],
-    description: '',
+    content: [], description: '',
   },
   {
     idx: 25, color: '#FFE99A', name: 'Lotos',
     thumbnail: 'assets/media/cases/case-lotos.webp',
-    content: [],
-    description: '',
+    content: [], description: '',
   },
   {
     idx: 28, color: '#9AFFFF', name: 'Funcity',
     thumbnail: 'assets/media/cases/case-funcity.webp',
-    content: [],
-    description: '',
+    content: [], description: '',
   },
 ];
