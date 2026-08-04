@@ -1,0 +1,293 @@
+/* ─── PORTFOLIO PAGE ─────────────────────────────── */
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body {
+  width: 100%; height: 100%;
+  overflow: hidden;
+  background: #212121;
+  font-family: 'Inter', sans-serif;
+}
+
+.portfolio {
+  position: relative;
+  width: 100vw;
+  height: 100vh;
+  background: #212121;
+  overflow: hidden;
+}
+
+/* ─── LEFT PANEL ─────────────────────────────────── */
+
+.portfolio-left-clip {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  width: 460px;
+  bottom: 10px;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.portfolio-left {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  will-change: transform;
+  pointer-events: auto;
+}
+
+.portfolio-left-img {
+  width: 100%;
+  flex-shrink: 0;
+  display: block;
+  cursor: pointer;
+  transition: opacity 0.3s ease;
+}
+
+/* <img> items — natural proportions, no crop */
+img.portfolio-left-img {
+  height: auto;
+}
+
+/* Color placeholder — fixed ratio */
+.portfolio-left-img.is-color {
+  aspect-ratio: 2880 / 1800;
+}
+
+.portfolio-left-img:hover { opacity: 0.85; }
+
+.portfolio-left-img.is-video {
+  position: relative;
+  overflow: hidden;
+  pointer-events: auto;
+  min-height: 200px; /* fallback until SDK sets aspect-ratio */
+}
+
+.portfolio-left-img.is-video iframe {
+  position: absolute;
+  top: 0; left: 0;
+  width: 100% !important;
+  height: 100% !important;
+  border: none !important;
+  pointer-events: none;
+}
+
+/* ─── DESCRIPTION BUTTON (top center) ────────────── */
+
+.portfolio-desc-wrap {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 10px;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.portfolio-desc-panel {
+  order: 2;
+  width: 280px;
+  max-height: 0;
+  overflow: hidden;
+  opacity: 0;
+  pointer-events: none;
+  transition: max-height 0.45s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+              opacity 0.3s ease;
+}
+
+.portfolio-desc-panel.is-open {
+  max-height: 200px;
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.portfolio-desc-content {
+  background: rgba(255,255,255,0.96);
+  border-radius: 8px;
+  padding: 14px 16px;
+  margin-top: 6px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.18);
+}
+
+.portfolio-desc-project {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  color: #aaa;
+  margin-bottom: 7px;
+}
+
+.portfolio-desc-text {
+  font-size: 12px;
+  line-height: 1.65;
+  color: #212121;
+}
+
+.desc-icon {
+  transition: transform 0.35s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.portfolio-desc-btn.is-open .desc-icon {
+  transform: rotate(45deg);
+}
+
+.portfolio-desc-btn {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: #fff;
+  border: none;
+  border-radius: 5px;
+  padding: 8px 7px;
+  cursor: pointer;
+  font-family: 'Inter', sans-serif;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: -0.5px;
+  text-transform: uppercase;
+  color: #000;
+  white-space: nowrap;
+  line-height: 1;
+}
+
+.portfolio-desc-btn svg { width: 8px; height: 8px; flex-shrink: 0; }
+
+/* ─── 3D SCENE WRAPPER ───────────────────────────── */
+
+#col-3d-scene {
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  perspective: 1450px;
+  perspective-origin: 85% 92%;
+  pointer-events: none;
+  overflow: visible;
+}
+
+/* ─── THUMBNAIL COLUMNS (right side) ─────────────── */
+
+.portfolio-thumbs {
+  position: absolute;
+  width: 140px;
+  display: flex;
+  flex-direction: column;
+  gap: 80px;
+  align-items: center;
+  padding: 0;
+  transform-style: preserve-3d;
+  pointer-events: auto;
+}
+
+.portfolio-thumbs.col-1 { left: calc(66.6667% + 10px); top: -27px; }
+.portfolio-thumbs.col-2 { left: calc(77.7778% + 10px); top: -9px; }
+.portfolio-thumbs.col-3 { left: calc(88.8889% + 10px); top: 10px; }
+
+.portfolio-thumb {
+  width: 100%;
+  aspect-ratio: 808 / 632;
+  flex-shrink: 0;
+  cursor: pointer;
+  display: block;
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  transform-origin: center center;
+  scale: 1;
+  border-radius: 0px;
+  transition: scale 340ms cubic-bezier(0.25, 0.46, 0.45, 0.94),
+              border-radius 340ms cubic-bezier(0.25, 0.46, 0.45, 0.94),
+              opacity 0.3s ease;
+}
+
+.portfolio-thumbs.is-scrolling .portfolio-thumb {
+  scale: 0.714;
+  border-radius: 10px;
+}
+
+.portfolio-thumb:hover { opacity: 0.75; }
+
+/* ─── CROSSHAIR (center) ──────────────────────────── */
+
+.portfolio-crosshair {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 24px;
+  height: 24px;
+  pointer-events: none;
+  color: #888;
+}
+
+.portfolio-crosshair svg {
+  width: 100%;
+  height: 100%;
+  transform-origin: center center;
+  will-change: transform;
+}
+
+/* ─── BOTTOM NAVIGATION ───────────────────────────── */
+
+.portfolio-nav {
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  width: 270px;
+  padding: 10px;
+  justify-content: center;
+  align-items: center;
+  gap: 4px;
+  z-index: 10;
+}
+
+/* OD logo toggle — 24×24px pill, SVG 15.867×14px */
+.portfolio-nav-toggle {
+  width: 24px;
+  height: 24px;
+  background: #fff;
+  border: none;
+  border-radius: 5px;
+  padding: 0;
+  cursor: pointer;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: #212121;
+}
+
+.portfolio-nav-toggle svg {
+  width: 15.867px;
+  height: 14px;
+  display: block;
+  fill: #212121;
+}
+
+.portfolio-nav-btn {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+  background: #fff;
+  border: none;
+  border-radius: 5px;
+  padding: 5.5px 7px;
+  cursor: pointer;
+  font-family: 'Inter', sans-serif;
+  font-size: 11px;
+  font-style: normal;
+  font-weight: 600;
+  line-height: normal;
+  letter-spacing: -0.5px;
+  text-transform: uppercase;
+  color: #212121;
+  white-space: nowrap;
+  flex-shrink: 0;
+}

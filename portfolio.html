@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Portfolio</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/css/portfolio.css">
+</head>
+<body>
+
+<div class="portfolio">
+
+  <!-- ─── LEFT PANEL (JS populates) ───────────── -->
+  <div class="portfolio-left-clip">
+    <div class="portfolio-left" id="portfolio-left"></div>
+  </div>
+
+  <!-- ─── DESCRIPTION BUTTON (top center) ────── -->
+  <div class="portfolio-desc-wrap">
+    <button class="portfolio-desc-btn" id="desc-btn">
+      DESCRIPTION
+      <svg class="desc-icon" viewBox="0 0 8 8" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M4 1V7M1 4H7" stroke="black" stroke-width="1.5" stroke-linecap="round"/>
+      </svg>
+    </button>
+    <div class="portfolio-desc-panel" id="desc-panel">
+      <div class="portfolio-desc-content">
+        <p class="portfolio-desc-project" id="desc-title"></p>
+        <p class="portfolio-desc-text" id="desc-text"></p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─── THUMBNAIL COLUMNS (JS populates) ────── -->
+  <div id="col-3d-scene">
+    <div class="portfolio-thumbs col-1" id="col-0"></div>
+    <div class="portfolio-thumbs col-2" id="col-1"></div>
+    <div class="portfolio-thumbs col-3" id="col-2"></div>
+  </div>
+
+  <!-- ─── CENTER CROSSHAIR ─────────────────────── -->
+  <div class="portfolio-crosshair" aria-hidden="true">
+    <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M12 2V22M2 12H22" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+    </svg>
+  </div>
+
+  <!-- ─── BOTTOM NAVIGATION ─────────────────────── -->
+  <nav class="portfolio-nav">
+    <button class="portfolio-nav-toggle" aria-label="Toggle theme">
+      <svg viewBox="0 0 170 150" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M85 0C96.1624 0 107.215 1.93993 117.528 5.70903C127.841 9.47813 137.211 15.0026 145.104 21.967C152.997 28.9314 159.258 37.1993 163.53 46.2987C167.801 55.3982 170 65.1509 170 75C170 84.8491 167.801 94.6018 163.53 103.701C159.258 112.801 152.997 121.069 145.104 128.033C137.211 134.997 127.841 140.522 117.528 144.291C107.215 148.06 96.1624 150 85 150C171.419 137.341 171.419 12.659 85 0Z" fill="currentColor"/>
+        <path d="M85 0C73.8377 0 62.7846 1.93993 52.4719 5.70903C42.1592 9.47813 32.7889 15.0026 24.8959 21.967C17.0029 28.9314 10.7419 37.1993 6.47025 46.2987C2.1986 55.3982 -4.87922e-07 65.1509 0 75C4.87922e-07 84.8491 2.19859 94.6018 6.47025 103.701C10.7419 112.801 17.003 121.069 24.8959 128.033C32.7889 134.997 42.1592 140.522 52.4719 144.291C62.7846 148.06 73.8376 150 85 150L85 0Z" fill="currentColor"/>
+      </svg>
+    </button>
+    <button class="portfolio-nav-btn">WORK</button>
+    <button class="portfolio-nav-btn">ABOUT</button>
+    <button class="portfolio-nav-btn">PRICE</button>
+    <button class="portfolio-nav-btn">CONTACT</button>
+  </nav>
+
+</div>
+
+<script src="assets/js/vendor/gsap.min.js"></script>
+<script src="assets/js/vendor/three.min.js"></script>
+<script src="assets/js/portfolio-data.js"></script>
+<script src="assets/js/portfolio.js"></script>
+</body>
+</html>
