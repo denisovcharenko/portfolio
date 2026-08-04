@@ -62,7 +62,8 @@ const MAX_VEL      = 120;
 const MIN_VEL      = 0.12;
 const SHRINK_DELAY = 140;
 
-const lc = (key, def) => (window.__cylCfg && window.__cylCfg[key] != null) ? window.__cylCfg[key] : def;
+const lc  = (key, def) => (window.__cylCfg  && window.__cylCfg[key]  != null) ? window.__cylCfg[key]  : def;
+const lcl = (key, def) => (window.__leftCfg && window.__leftCfg[key] != null) ? window.__leftCfg[key] : def;
 
 let lastT = null;
 function lerpK(smoothness, dt) {
@@ -81,6 +82,7 @@ let leftOneSetH = 1, leftItemH = 1;
 let leftContentCount = 4; // items in one set (before clone)
 
 let shrinkTimer = null;
+let leftScrollTimer = null;
 let rightOneSetH = 1, thumbH = 120;
 let crossAngle = 0, crossAngLY = 0;
 let currentProjectIdx = -1;
@@ -89,7 +91,7 @@ let descOpen = false;
 const thumbCaches = [[], [], []];
 const colCenterX  = [0, 0, 0];
 
-// Video preload pool — iframes живуть тут і грають приховано
+// Video preload pool
 const videoPool   = new Map(); // key → div element
 let poolContainer = null;
 
@@ -100,6 +102,8 @@ const descBtn     = document.getElementById('desc-btn');
 const descPanel   = document.getElementById('desc-panel');
 const descText    = document.getElementById('desc-text');
 const descTitle   = document.getElementById('desc-title');
+const descWrap    = document.querySelector('[data-desc-status]');
+const descBg      = document.querySelector('.portfolio-desc-nav__bg');
 const cols        = [
   document.getElementById('col-0'),
   document.getElementById('col-1'),
@@ -110,30 +114,30 @@ const cols        = [
 function makeVideoEl(item) {
   const el = document.createElement('div');
   el.className = 'portfolio-left-img is-video';
-  // Default 16/9 until SDK reports actual dimensions
-  el.style.aspectRatio = item.aspectRatio || '16/9';
-  el.innerHTML = item.embed || '';
-  const iframe = el.querySelector('iframe');
-  if (iframe) {
-    iframe.removeAttribute('width');
-    iframe.removeAttribute('height');
-    iframe.removeAttribute('sandbox');
-    iframe.setAttribute('allow', 'autoplay; fullscreen; picture-in-picture');
-    iframe.style.cssText = 'position:absolute;top:0;left:0;right:0;bottom:0;width:100%;height:100%;border:none;pointer-events:none;';
-  }
+  el.style.paddingTop = item.ratio || '56.25%';
+
+  const video = document.createElement('video');
+  video.muted = true;
+  video.loop = true;
+  video.autoplay = true;
+  video.preload = 'auto';
+  video.setAttribute('playsinline', '');
+  video.setAttribute('webkit-playsinline', '');
+  video.style.cssText = 'position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;pointer-events:none;';
+  if (item.thumb) video.poster = item.thumb;
+  video.src = item.src;
+
+  el.appendChild(video);
   return el;
 }
 
 function triggerPlay(key) {
   const el = videoPool.get(key);
-  const iframe = el && el.querySelector('iframe');
-  if (iframe) {
-    try { iframe.contentWindow.postMessage('{"method":"play"}', '*'); } catch (_) {}
-  }
+  const video = el && el.querySelector('video');
+  if (video) video.play().catch(() => {});
 }
 
 function preloadVideos() {
-  // no visibility:hidden — some browsers throttle hidden iframes
   poolContainer = document.createElement('div');
   poolContainer.style.cssText = 'position:fixed;left:-9999px;top:0;width:460px;pointer-events:none;';
   document.body.appendChild(poolContainer);
@@ -155,7 +159,10 @@ function preloadVideos() {
 
 // ─── DOM BUILD ───────────────────────────────────────
 function buildDOM() {
-  buildLeftPanel(PROJECTS[0]);
+  const oyvdoma = PROJECTS.find(p => p.name === 'Oyvdoma') || PROJECTS[0];
+  currentProjectIdx = oyvdoma.idx;
+  buildLeftPanel(oyvdoma);
+  updateDescription(oyvdoma.idx);
 
   cols.forEach((col, ci) => {
     col.innerHTML = '';
@@ -181,7 +188,6 @@ function buildDOM() {
 
 // Build left panel with infinite scroll clones
 function buildLeftPanel(proj) {
-  // Return any pooled video elements to pool before clearing
   if (poolContainer) {
     leftPanel.querySelectorAll('[data-vkey]').forEach(el => poolContainer.appendChild(el));
   }
@@ -195,7 +201,6 @@ function buildLeftPanel(proj) {
 
   leftContentCount = items.length;
 
-  // Two passes (real + clone) for infinite scroll
   for (let pass = 0; pass < 2; pass++) {
     items.forEach((item, ci) => {
       if (item.type === 'video') {
@@ -203,10 +208,9 @@ function buildLeftPanel(proj) {
         const pooled = videoPool.get(key);
         if (pooled) {
           leftPanel.appendChild(pooled);
-          triggerPlay(key); // re-play after reparent (Safari may pause on DOM move)
+          triggerPlay(key);
           return;
         }
-        // Fallback: create fresh (only if not preloaded)
         const el = makeVideoEl(item);
         el.dataset.vkey = key;
         videoPool.set(key, el);
@@ -286,14 +290,31 @@ function updateDescription(idx) {
   const proj = PROJECTS[idx];
   if (!proj) return;
   if (descTitle) descTitle.textContent = proj.name || '';
-  if (descText)  descText.textContent  = proj.description || '';
+  if (descText) {
+    const escaped = (proj.description || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    descText.innerHTML = escaped.split(/\n\n+/).map(p => `<p>${p.replace(/\n/g,'<br>')}</p>`).join('') || '';
+  }
   if (!proj.description && descOpen) setDescOpen(false);
 }
 
 function setDescOpen(open) {
   descOpen = open;
-  descPanel?.classList.toggle('is-open', open);
-  descBtn?.classList.toggle('is-open', open);
+  gsap.killTweensOf([descBg, descPanel]);
+  descWrap?.setAttribute('data-desc-status', open ? 'active' : 'not-active');
+
+  if (open) {
+    const btnH   = descBtn?.offsetHeight  || 27;
+    const groupH = descPanel?.offsetHeight || 80;
+    gsap.to(descBg, { width: 260, height: btnH + groupH, borderRadius: 8, duration: 0.7, ease: 'power3.out' });
+    gsap.set(descPanel, { visibility: 'visible' });
+    gsap.to(descPanel, { scale: 1, opacity: 1, duration: 0.5, delay: 0.1, ease: 'power3.out' });
+  } else {
+    gsap.to(descBg, { width: 110, height: 27, borderRadius: 5, duration: 0.6, ease: 'power2.inOut' });
+    gsap.to(descPanel, {
+      scale: 0.15, opacity: 0, duration: 0.4, ease: 'power2.inOut',
+      onComplete: () => gsap.set(descPanel, { visibility: 'hidden' }),
+    });
+  }
 }
 
 // ─── TICK ────────────────────────────────────────────
@@ -303,7 +324,7 @@ function tick() {
   lastT = now;
 
   const kR = lerpK(lc('smoothR', SMOOTH_R), dt);
-  const kL = lerpK(SMOOTH_L, dt);
+  const kL = lerpK(lcl('smoothL', SMOOTH_L), dt);
   const VH = window.innerHeight;
 
   // ── Right columns ─────────────────────────────────
@@ -376,27 +397,30 @@ function tick() {
   });
 
   // ── Left panel — infinite scroll ──────────────────
-  leftTarget += leftVel;
-  leftVel *= lc('friction', FRICTION);
-  if (Math.abs(leftVel) < MIN_VEL) leftVel = 0;
+  if (!window.__portfolioFreezeLeft) {
+    leftTarget += leftVel;
+    leftVel *= lcl('friction', FRICTION);
+    if (Math.abs(leftVel) < MIN_VEL) leftVel = 0;
 
-  leftLY += (leftTarget - leftLY) * kL;
+    leftLY += (leftTarget - leftLY) * kL;
 
-  if (leftOneSetH > 1) {
-    if (leftLY >= leftOneSetH) {
-      const d = leftLY - leftOneSetH;
-      leftLY = d; leftTarget -= leftOneSetH;
-    }
-    if (leftLY < 0) {
-      leftLY += leftOneSetH; leftTarget += leftOneSetH;
+    if (leftOneSetH > 1) {
+      if (leftLY >= leftOneSetH) {
+        const d = leftLY - leftOneSetH;
+        leftLY = d; leftTarget -= leftOneSetH;
+      }
+      if (leftLY < 0) {
+        leftLY += leftOneSetH; leftTarget += leftOneSetH;
+      }
     }
   }
 
   leftPanel.style.transform = `translateY(${-leftLY}px)`;
 
   // ── Crosshair ─────────────────────────────────────
-  const avgVel = (velR[0] + velR[1] + velR[2] + leftVel) / 4;
-  crossAngle += avgVel * lc('crossSpeed', 0.4);
+  // Left panel scroll → rotate one direction; right columns → opposite
+  const rightAvg = (velR[0] + velR[1] + velR[2]) / 3;
+  crossAngle += (leftVel - rightAvg) * lc('crossSpeed', 0.4);
   const kCross = lerpK(lc('crossSmooth', 82), dt);
   crossAngLY += (crossAngle - crossAngLY) * kCross;
   if (crosshairEl) crosshairEl.style.transform = `rotate(${crossAngLY}deg)`;
@@ -411,9 +435,12 @@ function onWheel(e) {
     let raw = e.deltaY;
     if (e.deltaMode === 1) raw *= 32;
     if (e.deltaMode === 2) raw *= window.innerHeight;
-    leftVel += raw * lc('sensitivity', 0.09) * 0.6;
-    const mv = lc('maxVel', MAX_VEL);
+    leftVel += raw * lcl('sensitivity', 0.054);
+    const mv = lcl('maxVel', MAX_VEL);
     leftVel = Math.max(-mv, Math.min(mv, leftVel));
+    leftPanel.classList.add('is-scrolling');
+    clearTimeout(leftScrollTimer);
+    leftScrollTimer = setTimeout(() => leftPanel.classList.remove('is-scrolling'), 150);
   } else {
     // Right half → scroll thumbnails
     let raw = e.deltaY;
@@ -492,6 +519,7 @@ async function init() {
   // API for admin panel
   window.portfolioAdmin = {
     getProjects: () => PROJECTS,
+    getActiveIdx: () => currentProjectIdx,
     setProject: (idx, data) => {
       if (idx >= 0 && idx < PROJECTS.length) {
         Object.assign(PROJECTS[idx], data);

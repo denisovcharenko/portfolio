@@ -19,15 +19,16 @@
   </div>
 
   <!-- ─── DESCRIPTION BUTTON (top center) ────── -->
-  <div class="portfolio-desc-wrap">
-    <button class="portfolio-desc-btn" id="desc-btn">
-      DESCRIPTION
-      <svg class="desc-icon" viewBox="0 0 8 8" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <path d="M4 1V7M1 4H7" stroke="black" stroke-width="1.5" stroke-linecap="round"/>
-      </svg>
-    </button>
-    <div class="portfolio-desc-panel" id="desc-panel">
-      <div class="portfolio-desc-content">
+  <div class="portfolio-desc-wrap" data-desc-status="not-active">
+    <div class="portfolio-desc-nav">
+      <div class="portfolio-desc-nav__bg"></div>
+      <button class="portfolio-desc-btn" id="desc-btn">
+        DESCRIPTION
+        <svg class="desc-icon" viewBox="0 0 8 8" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M4 1V7M1 4H7" stroke="black" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>
+      </button>
+      <div class="portfolio-desc-nav__group" id="desc-panel">
         <p class="portfolio-desc-project" id="desc-title"></p>
         <p class="portfolio-desc-text" id="desc-text"></p>
       </div>
@@ -70,5 +71,11 @@
 <script src="assets/js/portfolio-admin.js"></script>
 <script src="assets/js/portfolio.js"></script>
 <script src="assets/js/portfolio-debug.js"></script>
+<script src="assets/js/portfolio-left-debug.js"></script>
+<script src="assets/js/portfolio-zoom.js"></script>
+
+<!-- Click-to-zoom lightbox overlay -->
+<div data-click-zoom-lightbox class="click-zoom__lightbox"></div>
+
 </body>
 </html>

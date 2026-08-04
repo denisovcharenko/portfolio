@@ -44,6 +44,15 @@ html, body {
   display: block;
   cursor: pointer;
   transition: opacity 0.3s ease;
+  will-change: transform;
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+}
+
+/* Disable hover transition while scrolling to prevent flicker */
+.portfolio-left.is-scrolling .portfolio-left-img {
+  transition: none;
+  pointer-events: none;
 }
 
 /* <img> items — natural proportions, no crop */
@@ -58,59 +67,95 @@ img.portfolio-left-img {
 
 .portfolio-left-img:hover { opacity: 0.85; }
 
+/* Zoom-in cursor on clickable left panel items */
+img.portfolio-left-img,
 .portfolio-left-img.is-video {
-  position: relative;
-  overflow: hidden;
-  pointer-events: auto;
-  min-height: 200px; /* fallback until SDK sets aspect-ratio */
+  cursor: zoom-in;
 }
 
-.portfolio-left-img.is-video iframe {
-  position: absolute;
-  top: 0; left: 0;
-  width: 100% !important;
-  height: 100% !important;
-  border: none !important;
-  pointer-events: none;
+.portfolio-left-img.is-video {
+  position: relative;
+  height: 0;
+  overflow: hidden;
 }
 
 /* ─── DESCRIPTION BUTTON (top center) ────────────── */
 
 .portfolio-desc-wrap {
   position: absolute;
-  top: 0;
+  top: 10px;
   left: 50%;
   transform: translateX(-50%);
-  padding: 10px;
   z-index: 10;
+  pointer-events: none;
+}
+
+.portfolio-desc-nav {
+  position: relative;
   display: flex;
   flex-direction: column;
   align-items: center;
 }
 
-.portfolio-desc-panel {
-  order: 2;
-  width: 280px;
-  max-height: 0;
-  overflow: hidden;
-  opacity: 0;
-  pointer-events: none;
-  transition: max-height 0.45s cubic-bezier(0.25, 0.46, 0.45, 0.94),
-              opacity 0.3s ease;
+/* Expanding background — starts as button pill, grows to full panel */
+.portfolio-desc-nav__bg {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 110px;
+  height: 27px;
+  border-radius: 5px;
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
+  will-change: width, height, border-radius;
 }
 
-.portfolio-desc-panel.is-open {
-  max-height: 200px;
-  opacity: 1;
+/* Button above the bg */
+.portfolio-desc-btn {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: transparent;
+  border: none;
+  border-radius: 5px;
+  padding: 8px 7px;
+  cursor: pointer;
+  font-family: 'Inter', sans-serif;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: -0.5px;
+  text-transform: uppercase;
+  color: #000;
+  white-space: nowrap;
+  line-height: 1;
+  position: relative;
+  z-index: 1;
   pointer-events: auto;
 }
 
-.portfolio-desc-content {
-  background: rgba(255,255,255,0.96);
-  border-radius: 8px;
-  padding: 14px 16px;
-  margin-top: 6px;
-  box-shadow: 0 8px 32px rgba(0,0,0,0.18);
+.portfolio-desc-btn svg { width: 8px; height: 8px; flex-shrink: 0; }
+
+.desc-icon {
+  transition: transform 0.35s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+[data-desc-status="active"] .desc-icon {
+  transform: rotate(45deg);
+}
+
+/* Content group — GSAP handles show/hide animation */
+.portfolio-desc-nav__group {
+  width: 260px;
+  padding: 4px 16px 16px;
+  position: relative;
+  z-index: 1;
+  visibility: hidden;
+  opacity: 0;
+  transform: scale(0.15) rotate(0.001deg);
+  transform-origin: 50% 0;
+  will-change: transform, opacity;
+  box-sizing: border-box;
 }
 
 .portfolio-desc-project {
@@ -128,34 +173,8 @@ img.portfolio-left-img {
   color: #212121;
 }
 
-.desc-icon {
-  transition: transform 0.35s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-}
-
-.portfolio-desc-btn.is-open .desc-icon {
-  transform: rotate(45deg);
-}
-
-.portfolio-desc-btn {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  background: #fff;
-  border: none;
-  border-radius: 5px;
-  padding: 8px 7px;
-  cursor: pointer;
-  font-family: 'Inter', sans-serif;
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: -0.5px;
-  text-transform: uppercase;
-  color: #000;
-  white-space: nowrap;
-  line-height: 1;
-}
-
-.portfolio-desc-btn svg { width: 8px; height: 8px; flex-shrink: 0; }
+.portfolio-desc-text p { margin: 0; }
+.portfolio-desc-text p + p { margin-top: 0.85em; }
 
 /* ─── 3D SCENE WRAPPER ───────────────────────────── */
 
@@ -289,5 +308,23 @@ img.portfolio-left-img {
   text-transform: uppercase;
   color: #212121;
   white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* ─── CLICK TO ZOOM LIGHTBOX ──────────────────────── */
+.click-zoom__lightbox {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 99999;
+  justify-content: center;
+  align-items: center;
+  padding: 5vmin;
+  background-color: rgba(0, 0, 0, 0.88);
+}
+
+.click-zoom__lightbox > * {
+  /* clicks fall through to the lightbox (which closes it) */
+  pointer-events: none;
   flex-shrink: 0;
 }
