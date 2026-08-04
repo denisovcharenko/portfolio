@@ -90,9 +90,8 @@ const thumbCaches = [[], [], []];
 const colCenterX  = [0, 0, 0];
 
 // Video preload pool — iframes живуть тут і грають приховано
-const videoPool    = new Map(); // key → div element
-const vimeoPlayers = new Map(); // key → Vimeo.Player instance
-let poolContainer  = null;
+const videoPool   = new Map(); // key → div element
+let poolContainer = null;
 
 // ─── ELEMENTS ────────────────────────────────────────
 const leftPanel   = document.getElementById('portfolio-left');
@@ -121,42 +120,11 @@ function makeVideoEl(item) {
     iframe.removeAttribute('sandbox');
     iframe.setAttribute('allow', 'autoplay; fullscreen; picture-in-picture');
     iframe.style.cssText = 'position:absolute;top:0;left:0;right:0;bottom:0;width:100%;height:100%;border:none;pointer-events:none;';
-    // Ensure autoplay params (no background=1 — requires Vimeo Pro)
-    let src = iframe.getAttribute('src') || '';
-    if (src.includes('vimeo.com') && !src.includes('autoplay=1')) {
-      src += (src.includes('?') ? '&' : '?') + 'autoplay=1&muted=1&loop=1&title=0&byline=0&portrait=0&playsinline=1';
-      iframe.setAttribute('src', src);
-    }
   }
   return el;
 }
 
-function initVimeoPlayer(el, key) {
-  if (!window.Vimeo) return;
-  const iframe = el.querySelector('iframe');
-  if (!iframe) return;
-  const player = new Vimeo.Player(iframe);
-  vimeoPlayers.set(key, player);
-  player.on('play', () => {});
-  player.ready()
-    .then(() => Promise.all([player.getVideoWidth(), player.getVideoHeight(), player.play()]))
-    .then(([w, h]) => {
-      if (w && h) {
-        el.style.aspectRatio = `${w}/${h}`;
-        // Re-measure scroll if this video is currently visible in the panel
-        if (leftPanel.contains(el)) measureLeftPanel();
-      }
-    })
-    .catch(() => {});
-}
-
 function triggerPlay(key) {
-  const player = vimeoPlayers.get(key);
-  if (player) {
-    player.play().catch(() => {});
-    return;
-  }
-  // pass=1 clones have no SDK Player — use raw postMessage to resume if Safari paused
   const el = videoPool.get(key);
   const iframe = el && el.querySelector('iframe');
   if (iframe) {
@@ -180,8 +148,6 @@ function preloadVideos() {
         el.dataset.vkey = key;
         videoPool.set(key, el);
         poolContainer.appendChild(el);
-        // SDK only for pass=0 — halves Player instances, avoids autoplay conflicts
-        if (pass === 0) initVimeoPlayer(el, key);
       }
     });
   });
@@ -245,7 +211,6 @@ function buildLeftPanel(proj) {
         el.dataset.vkey = key;
         videoPool.set(key, el);
         leftPanel.appendChild(el);
-        initVimeoPlayer(el, key);
       } else if (item.type === 'image' && item.src) {
         const img = document.createElement('img');
         img.className = 'portfolio-left-img';
