@@ -23,7 +23,7 @@ html, body {
   position: absolute;
   top: 10px;
   left: 10px;
-  width: 460px;
+  width: clamp(280px, 32vw, 460px);
   bottom: 10px;
   overflow: hidden;
   pointer-events: none;
@@ -201,9 +201,10 @@ img.portfolio-left-img,
   pointer-events: auto;
 }
 
-.portfolio-thumbs.col-1 { left: calc(66.6667% + 10px); top: -27px; }
-.portfolio-thumbs.col-2 { left: calc(77.7778% + 10px); top: -9px; }
-.portfolio-thumbs.col-3 { left: calc(88.8889% + 10px); top: 10px; }
+/* Anchored from right — fixed gutter, no overlap at any VW */
+.portfolio-thumbs.col-1 { right: 330px; top: -27px; }
+.portfolio-thumbs.col-2 { right: 170px; top: -9px;  }
+.portfolio-thumbs.col-3 { right:  10px; top:  10px; }
 
 .portfolio-thumb {
   width: 100%;
@@ -327,4 +328,199 @@ img.portfolio-left-img,
   /* clicks fall through to the lightbox (which closes it) */
   pointer-events: none;
   flex-shrink: 0;
+}
+
+/* ─── MOBILE CASE BAR (hidden on desktop) ────────── */
+.mobile-case-bar { display: none; }
+.mobile-back-btn { display: none; }
+.mobile-case-name { display: none; }
+
+/* ─── MOBILE (≤ 599px) ───────────────────────────── */
+@media (max-width: 599px) {
+
+  /* Nav moves to top */
+  .portfolio-nav {
+    position: fixed;
+    bottom: auto;
+    top: 0;
+    left: 0;
+    right: 0;
+    width: 100%;
+    transform: none;
+    justify-content: flex-start;
+    padding: 7px 8px;
+    gap: 3px;
+    z-index: 50;
+    background: rgba(33, 33, 33, 0.96);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+  }
+
+  /* Make nav buttons slightly smaller on mobile */
+  .portfolio-nav-btn {
+    font-size: 10px;
+    padding: 5px 6px;
+    border-radius: 4px;
+  }
+
+  .portfolio-nav-toggle {
+    width: 22px;
+    height: 22px;
+    border-radius: 4px;
+  }
+
+  /* Thumbnail columns — 2 columns, spread across full viewport width */
+  /* col-1 (leftmost desktop column) is hidden on mobile */
+  .portfolio-thumbs.col-1 { display: none; }
+
+  /* 4px outer margins, 4px gutter: width = (100vw - 12px) / 2 */
+  .portfolio-thumbs {
+    width: calc((100vw - 12px) / 2);
+    gap: 12px;
+  }
+  .portfolio-thumbs.col-2 { left: 4px;                                right: auto; top: calc(38px - 9px);  }
+  .portfolio-thumbs.col-3 { left: calc((100vw - 12px) / 2 + 8px);    right: auto; top: calc(38px + 10px); }
+
+  /* Prevent scene-level JS tilt on mobile (cursor-driven), keep perspective for cylinder depth */
+  #col-3d-scene {
+    perspective-origin: 50% 50% !important; /* centered for mobile layout */
+    transform: none !important;
+  }
+
+  .portfolio-thumb {
+    border-radius: 4px;
+  }
+
+  /* Shrink effect on mobile — same feel as desktop */
+  .portfolio-thumbs.is-scrolling .portfolio-thumb {
+    scale: 0.714;
+    border-radius: 10px;
+  }
+
+  /* Hide crosshair on mobile */
+  .portfolio-crosshair { display: none; }
+
+  /* Description — hidden until a case is open, then fixed at bottom */
+  .portfolio-desc-wrap {
+    display: none;
+    position: fixed;
+    top: auto;
+    bottom: 16px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 200;
+    pointer-events: none;
+  }
+  .portfolio-desc-wrap.mobile-desc-on {
+    display: block;
+    pointer-events: auto;
+  }
+  /* Flip order: button at bottom, content panel above */
+  .portfolio-desc-nav {
+    flex-direction: column-reverse;
+    align-items: center;
+  }
+  /* Bg anchors to button (bottom of the reversed container) and grows upward */
+  .portfolio-desc-nav__bg {
+    top: auto;
+    bottom: 0;
+  }
+  /* Content panel expands from its bottom edge (toward the top of the screen) */
+  .portfolio-desc-nav__group {
+    transform-origin: 50% 100%;
+    width: min(280px, 90vw);
+  }
+
+  /* Safety guard: if mobile-open is absent (e.g. DevTools resize without reload),
+     keep the panel invisible regardless of GSAP transform state */
+  .portfolio-left-clip:not(.mobile-open) {
+    visibility: hidden !important;
+  }
+  .portfolio-left-clip.mobile-open {
+    visibility: visible;
+  }
+
+  /* Left panel — off-screen by default, slides in as overlay */
+  .portfolio-left-clip {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    width: 100%;
+    overflow-y: auto;
+    overflow-x: hidden;
+    -webkit-overflow-scrolling: touch;
+    z-index: 100;
+    background: #212121;
+    /* GSAP controls transform — initial state set by JS */
+    pointer-events: none;
+  }
+
+  .portfolio-left-clip.mobile-open {
+    pointer-events: auto;
+  }
+
+  /* Left panel content — no JS transform, natural height */
+  .portfolio-left {
+    transform: none !important;
+    width: 100%;
+    padding-top: 48px;
+    padding-bottom: 40px;
+    overflow: visible;
+  }
+
+  .portfolio-left-img {
+    width: 100%;
+    border-radius: 0;
+  }
+
+  img.portfolio-left-img {
+    width: 100%;
+    height: auto;
+  }
+
+  /* Mobile case bar — sticky header inside the scrollable clip */
+  .mobile-case-bar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 14px;
+    position: sticky;
+    top: 0;
+    z-index: 5;
+    background: #212121;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    height: 48px;
+  }
+
+  .mobile-back-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    background: rgba(255, 255, 255, 0.08);
+    border: none;
+    border-radius: 8px;
+    color: #fff;
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: background 0.15s;
+  }
+  .mobile-back-btn:active { background: rgba(255, 255, 255, 0.18); }
+  .mobile-back-btn svg { width: 18px; height: 18px; }
+
+  .mobile-case-name {
+    display: block;
+    font-family: 'Inter', sans-serif;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    color: #aaa;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
 }

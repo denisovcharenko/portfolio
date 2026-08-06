@@ -88,6 +88,42 @@ let crossAngle = 0, crossAngLY = 0;
 let currentProjectIdx = -1;
 let descOpen = false;
 
+const MOBILE = window.innerWidth <= 599;
+
+// ─── RESPONSIVE COLUMN SYSTEM ────────────────────────
+const COL_W        = 140;   // column width px
+const COL_G        = 20;    // gutter between columns px
+const COL_RM       = 10;    // right margin px
+const COL_LVW      = 0.32;  // left panel ratio of VW
+const COL_LMAX     = 460;   // left panel max px
+const COL_LMIN     = 280;   // left panel min px
+const COL_CCLEAR   = 200;   // minimum center clearance (100px each side)
+const COL_HYSTER   = 30;    // hysteresis px before column count change commits
+const COL_MAX      = 3;
+
+let activeN   = 3;   // current column count
+let pendingN  = null;
+let pendingVW = null;
+
+function calcN(vw) {
+  const lw    = Math.min(COL_LMAX, Math.max(COL_LMIN, vw * COL_LVW));
+  const avail = vw - lw - COL_CCLEAR - COL_RM;
+  return Math.max(1, Math.min(COL_MAX, Math.floor((avail + COL_G) / (COL_W + COL_G))));
+}
+
+function applyN(n, animated) {
+  activeN = n;
+  cols.forEach((col, i) => {
+    const visible = i >= COL_MAX - n; // rightmost N columns are visible
+    if (animated) {
+      gsap.to(col, { opacity: visible ? 1 : 0, duration: 0.4, ease: 'power2.inOut' });
+    } else {
+      col.style.opacity = visible ? '1' : '0';
+    }
+    col.style.pointerEvents = visible ? '' : 'none';
+  });
+}
+
 const thumbCaches = [[], [], []];
 const colCenterX  = [0, 0, 0];
 
@@ -160,9 +196,13 @@ function preloadVideos() {
 // ─── DOM BUILD ───────────────────────────────────────
 function buildDOM() {
   const oyvdoma = PROJECTS.find(p => p.name === 'Oyvdoma') || PROJECTS[0];
-  currentProjectIdx = oyvdoma.idx;
-  buildLeftPanel(oyvdoma);
-  updateDescription(oyvdoma.idx);
+
+  // On mobile the left panel starts hidden — user opens a case by tapping a thumbnail
+  if (!MOBILE) {
+    currentProjectIdx = oyvdoma.idx;
+    buildLeftPanel(oyvdoma);
+    updateDescription(oyvdoma.idx);
+  }
 
   cols.forEach((col, ci) => {
     col.innerHTML = '';
@@ -201,7 +241,8 @@ function buildLeftPanel(proj) {
 
   leftContentCount = items.length;
 
-  for (let pass = 0; pass < 2; pass++) {
+  const passes = MOBILE ? 1 : 2; // no infinite-scroll clones on mobile (native scroll)
+  for (let pass = 0; pass < passes; pass++) {
     items.forEach((item, ci) => {
       if (item.type === 'video') {
         const key = `v-${proj.idx}-${ci}-${pass}`;
@@ -235,10 +276,14 @@ function buildLeftPanel(proj) {
 
 // ─── MEASURE ─────────────────────────────────────────
 function measure() {
-  const thumb = cols[0].querySelector('.portfolio-thumb');
+  // Use the first visible (non-display:none) column to sample thumb dimensions
+  const sampleCol = cols.find(c => c.offsetParent !== null) || cols[0];
+  const thumb = sampleCol.querySelector('.portfolio-thumb');
   if (thumb) {
     thumbH = thumb.getBoundingClientRect().height;
-    rightOneSetH = N_PER_COL * (thumbH + RIGHT_GAP);
+    // Gap between cards matches the CSS gap on the column
+    const rightGap = window.innerWidth <= 599 ? 12 : RIGHT_GAP;
+    rightOneSetH = N_PER_COL * (thumbH + rightGap);
   }
 
   const leftImgs = Array.from(leftPanel.querySelectorAll('.portfolio-left-img')).slice(0, leftContentCount);
@@ -252,6 +297,8 @@ function measure() {
     thumbCaches[i] = Array.from(col.querySelectorAll('.portfolio-thumb'));
     const r = col.getBoundingClientRect();
     colCenterX[i] = r.left + r.width * 0.5;
+    // Update natural column top (compensate for current scroll offset so resize mid-scroll is correct)
+    COL_TOPS[i] = r.top + rightLY[i];
   });
 }
 
@@ -347,7 +394,7 @@ function tick() {
 
     col.style.transform = `translateY(${-rightLY[i]}px)`;
 
-    const step     = thumbH + RIGHT_GAP;
+    const step     = thumbH + (window.innerWidth <= 599 ? 12 : RIGHT_GAP);
     const c        = window.__cylCfg || {};
     const liveCYL  = c.cylR         ?? CYLR;
     const zMult    = c.zMult        ?? 1;
@@ -364,6 +411,7 @@ function tick() {
     const radH     = (dx / liveCYL) * bowlStr;
 
     thumbCaches[i].forEach((thumb, j) => {
+      if (i < COL_MAX - activeN) { thumb.style.transform = ''; return; }
       const cardCY = COL_TOPS[i] + j * step + thumbH * 0.5 - rightLY[i];
       const dy     = cardCY - VH * 0.5;
       const absdy  = Math.abs(dy);
@@ -396,34 +444,34 @@ function tick() {
     });
   });
 
-  // ── Left panel — infinite scroll ──────────────────
-  if (!window.__portfolioFreezeLeft) {
-    leftTarget += leftVel;
-    leftVel *= lcl('friction', FRICTION);
-    if (Math.abs(leftVel) < MIN_VEL) leftVel = 0;
+  // ── Left panel + crosshair — desktop only ────────
+  if (!MOBILE) {
+    if (!window.__portfolioFreezeLeft) {
+      leftTarget += leftVel;
+      leftVel *= lcl('friction', FRICTION);
+      if (Math.abs(leftVel) < MIN_VEL) leftVel = 0;
 
-    leftLY += (leftTarget - leftLY) * kL;
+      leftLY += (leftTarget - leftLY) * kL;
 
-    if (leftOneSetH > 1) {
-      if (leftLY >= leftOneSetH) {
-        const d = leftLY - leftOneSetH;
-        leftLY = d; leftTarget -= leftOneSetH;
-      }
-      if (leftLY < 0) {
-        leftLY += leftOneSetH; leftTarget += leftOneSetH;
+      if (leftOneSetH > 1) {
+        if (leftLY >= leftOneSetH) {
+          const d = leftLY - leftOneSetH;
+          leftLY = d; leftTarget -= leftOneSetH;
+        }
+        if (leftLY < 0) {
+          leftLY += leftOneSetH; leftTarget += leftOneSetH;
+        }
       }
     }
+
+    leftPanel.style.transform = `translateY(${-leftLY}px)`;
+
+    const rightAvg = (velR[0] + velR[1] + velR[2]) / 3;
+    crossAngle += (leftVel - rightAvg) * lc('crossSpeed', 0.4);
+    const kCross = lerpK(lc('crossSmooth', 82), dt);
+    crossAngLY += (crossAngle - crossAngLY) * kCross;
+    if (crosshairEl) crosshairEl.style.transform = `rotate(${crossAngLY}deg)`;
   }
-
-  leftPanel.style.transform = `translateY(${-leftLY}px)`;
-
-  // ── Crosshair ─────────────────────────────────────
-  // Left panel scroll → rotate one direction; right columns → opposite
-  const rightAvg = (velR[0] + velR[1] + velR[2]) / 3;
-  crossAngle += (leftVel - rightAvg) * lc('crossSpeed', 0.4);
-  const kCross = lerpK(lc('crossSmooth', 82), dt);
-  crossAngLY += (crossAngle - crossAngLY) * kCross;
-  if (crosshairEl) crosshairEl.style.transform = `rotate(${crossAngLY}deg)`;
 }
 
 // ─── WHEEL ───────────────────────────────────────────
@@ -468,6 +516,7 @@ function onThumbClick(e) {
   const thumb = e.target.closest('.portfolio-thumb');
   if (!thumb) return;
   const idx = parseInt(thumb.dataset.globalIdx ?? 0, 10);
+  if (MOBILE) { openMobileCase(idx); return; }
   currentProjectIdx = idx;
   setLeftContent(idx);
   updateDescription(idx);
@@ -507,6 +556,7 @@ async function init() {
 
   requestAnimationFrame(() => requestAnimationFrame(() => {
     measure();
+    if (!MOBILE) applyN(calcN(window.innerWidth), false);
     gsap.ticker.add(tick);
     gsap.ticker.lagSmoothing(0);
   }));
@@ -514,7 +564,64 @@ async function init() {
   const portfolio = document.querySelector('.portfolio');
   portfolio.addEventListener('wheel', onWheel, { passive: true });
   portfolio.addEventListener('click', onThumbClick);
-  window.addEventListener('resize', () => requestAnimationFrame(measure), { passive: true });
+
+  const MOBILE_BP = 599; // must match CSS breakpoint
+  let prevWasMobile = MOBILE; // tracks last known side of the breakpoint
+
+  function onResize() {
+    requestAnimationFrame(() => {
+      measure();
+      const vw         = window.innerWidth;
+      const nowMobile  = vw <= MOBILE_BP;
+      const crossed    = nowMobile !== prevWasMobile;
+      prevWasMobile    = nowMobile;
+
+      // ── Entered mobile CSS range ─────────────────────
+      if (nowMobile) {
+        cols.forEach(col => { col.style.opacity = ''; col.style.pointerEvents = ''; });
+        activeN = COL_MAX; pendingN = null; pendingVW = null;
+        // If just crossed from desktop: push leftClip off-screen
+        if (crossed && !mobileCaseOpen) gsap.set(leftClip, { x: '100%' });
+        return;
+      }
+
+      // ── Just entered desktop from mobile ─────────────
+      if (crossed) {
+        mobileCaseOpen = false;
+        leftClip.classList.remove('mobile-open');
+        if (descWrap) descWrap.classList.remove('mobile-desc-on');
+        if (descOpen) setDescOpen(false);
+        gsap.set(leftClip, { clearProps: 'x' }); // show at natural CSS position
+
+        // Load a project into the left panel
+        const deskIdx = currentProjectIdx >= 0
+          ? currentProjectIdx
+          : (PROJECTS.find(p => p.name === 'Oyvdoma') || PROJECTS[0]).idx;
+        if (currentProjectIdx < 0) currentProjectIdx = deskIdx;
+        setLeftContent(deskIdx);
+        updateDescription(deskIdx);
+
+        applyN(calcN(vw), false);
+        pendingN = null; pendingVW = null;
+        return;
+      }
+
+      // ── Normal desktop column-count hysteresis ────────
+      const n = calcN(vw);
+      if (n === activeN) { pendingN = null; pendingVW = null; return; }
+      if (pendingN !== n) { pendingN = n; pendingVW = vw; return; }
+      if (Math.abs(vw - pendingVW) >= COL_HYSTER) {
+        applyN(n, true);
+        pendingN = null; pendingVW = null;
+      }
+    });
+  }
+  window.addEventListener('resize', onResize, { passive: true });
+
+  if (MOBILE) {
+    window.__portfolioFreezeLeft = true;
+    initMobile(portfolio);
+  }
 
   // API for admin panel
   window.portfolioAdmin = {
@@ -543,6 +650,134 @@ async function init() {
       }
     },
   };
+}
+
+// ─── MOBILE ──────────────────────────────────────────
+let mobileCaseOpen = false;
+const leftClip = document.getElementById('portfolio-left-clip');
+
+function openMobileCase(idx) {
+  const proj = PROJECTS[idx];
+  if (!proj) return;
+
+  currentProjectIdx = idx;
+  setLeftContent(idx);
+  updateDescription(idx);
+
+  const nameEl = document.getElementById('mobile-case-name');
+  if (nameEl) nameEl.textContent = proj.name || '';
+
+  mobileCaseOpen = true;
+  leftClip.classList.add('mobile-open');
+  leftClip.scrollTop = 0;
+
+  if (descWrap) descWrap.classList.add('mobile-desc-on');
+
+  gsap.fromTo(leftClip, { x: '100%' }, { x: '0%', duration: 0.38, ease: 'power3.out' });
+}
+
+function closeMobileCase() {
+  mobileCaseOpen = false;
+  if (descOpen) setDescOpen(false);
+  if (descWrap) descWrap.classList.remove('mobile-desc-on');
+
+  gsap.to(leftClip, {
+    x: '100%', duration: 0.30, ease: 'power2.inOut',
+    onComplete: () => {
+      leftClip.classList.remove('mobile-open');
+      // Keep GSAP x:100% transform in place — do NOT clearProps, or the panel
+      // snaps back to its CSS position (position:fixed inset:0) and covers the screen.
+      leftClip.scrollTop = 0;
+    },
+  });
+}
+
+function initMobile(portfolio) {
+  // ── Position clip off-screen initially ──────────
+  gsap.set(leftClip, { x: '100%' });
+
+  // ── Back button ──────────────────────────────────
+  document.getElementById('mobile-back')?.addEventListener('click', closeMobileCase);
+
+  // ── Touch scroll for thumbnail columns ───────────
+  let tY = 0, tActive = false;
+
+  portfolio.addEventListener('touchstart', e => {
+    if (mobileCaseOpen) return;
+    tY = e.touches[0].clientY;
+    tActive = true;
+    velR.fill(0);
+    cols.forEach(col => col.classList.remove('is-scrolling'));
+  }, { passive: true });
+
+  portfolio.addEventListener('touchmove', e => {
+    if (!tActive || mobileCaseOpen) return;
+    const dy = e.touches[0].clientY - tY;
+    tY = e.touches[0].clientY;
+
+    const mv  = lc('maxVel', MAX_VEL);
+    const spd = [lc('speed0', SPEEDS[0]), lc('speed1', SPEEDS[1]), lc('speed2', SPEEDS[2])];
+    cols.forEach((_, i) => {
+      velR[i] -= dy * spd[i]; // invert: finger down → columns scroll up (content moves up)
+      velR[i] = Math.max(-mv * spd[i], Math.min(mv * spd[i], velR[i]));
+    });
+
+    cols.forEach(col => col.classList.add('is-scrolling'));
+    clearTimeout(shrinkTimer);
+    shrinkTimer = setTimeout(() => cols.forEach(col => col.classList.remove('is-scrolling')), 300);
+    e.preventDefault();
+  }, { passive: false });
+
+  portfolio.addEventListener('touchend', () => { tActive = false; }, { passive: true });
+
+  // ── Swipe-to-close from left edge of case detail ─
+  let swipeStartX = 0, swipeStartY = 0;
+  let swipeActive = false, swipeCommitted = false;
+
+  leftClip.addEventListener('touchstart', e => {
+    if (!mobileCaseOpen) return;
+    swipeStartX = e.touches[0].clientX;
+    swipeStartY = e.touches[0].clientY;
+    swipeActive = true;
+    swipeCommitted = false;
+  }, { passive: true });
+
+  leftClip.addEventListener('touchmove', e => {
+    if (!swipeActive || !mobileCaseOpen) return;
+    const dx = e.touches[0].clientX - swipeStartX;
+    const dy = Math.abs(e.touches[0].clientY - swipeStartY);
+
+    if (!swipeCommitted) {
+      // Commit only if started near left edge AND primarily horizontal
+      if (Math.abs(dx) > 8 || dy > 8) {
+        if (Math.abs(dx) > dy && dx > 0 && swipeStartX < 50) {
+          swipeCommitted = true;
+        } else {
+          swipeActive = false; // vertical scroll, let native scroll handle it
+          return;
+        }
+      }
+      return;
+    }
+
+    if (dx > 0) {
+      gsap.set(leftClip, { x: dx });
+      e.preventDefault();
+    }
+  }, { passive: false });
+
+  leftClip.addEventListener('touchend', e => {
+    if (!swipeActive || !swipeCommitted) { swipeActive = false; return; }
+    swipeActive = false;
+    swipeCommitted = false;
+
+    const dx = e.changedTouches[0].clientX - swipeStartX;
+    if (dx > 80) {
+      closeMobileCase();
+    } else {
+      gsap.to(leftClip, { x: 0, duration: 0.22, ease: 'power2.out' });
+    }
+  }, { passive: true });
 }
 
 document.addEventListener('DOMContentLoaded', init);

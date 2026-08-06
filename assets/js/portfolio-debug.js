@@ -1,310 +1,486 @@
 'use strict';
 
 (function () {
-  // ── Live config — all parameters read by portfolio.js ─
-  window.__cylCfg = {
-    // Cylinder
-    cylR:     3000,
-    zMult:    8.0,
-    maxDeg:   9,
-    // Zones
-    flatZone: 110,
-    fadeZone: 545,
-    // Perspective
-    persp:    1450,
-    origX:    85,
-    origY:    92,
-    // Scroll
-    sensitivity: 0.09,
-    friction:    0.93,
-    maxVel:      80,
-    smoothR:     3,
-    shrinkDelay: 60,
-    // Crosshair
-    crossSpeed:  0.40,
-    crossSmooth: 82,
-    // Parallax speeds (per column)
-    speed0: 1.00,
-    speed1: 0.85,
-    speed2: 0.70,
-    // Shape
-    sceneTiltX: 0,
-    sceneTiltY: 0,
-    sceneSkewX: 0,
-    cylAxis:      0,
-    bowlStrength: 0,
-    // Pit
-    pitCenterY: 0.75,
-    pitRadius:  200,
-    pitDepth:   0,
+  if (!new URLSearchParams(window.location.search).has('admin')) return;
+
+  // ── Default config ────────────────────────────────────
+  const DEFAULTS = {
+    cylR: 3000, zMult: 8.0, maxDeg: 9,
+    flatZone: 110, fadeZone: 545,
+    persp: 1450, origX: 85, origY: 92,
+    sensitivity: 0.09, friction: 0.93, maxVel: 80, smoothR: 3, shrinkDelay: 60,
+    crossSpeed: 0.40, crossSmooth: 82,
+    speed0: 1.00, speed1: 0.85, speed2: 0.70,
+    sceneTiltX: 0, sceneTiltY: 0, sceneSkewX: 0, cylAxis: 0, bowlStrength: 0,
+    pitCenterY: 0.75, pitRadius: 200, pitDepth: 0,
   };
 
-  const cfg   = window.__cylCfg;
-  const scene = document.getElementById('col-3d-scene');
+  window.__cylCfg = Object.assign({}, DEFAULTS);
+  const cfg = window.__cylCfg;
 
-  function applyCSS() {
-    scene.style.perspective       = cfg.persp + 'px';
-    scene.style.perspectiveOrigin = cfg.origX + '% ' + cfg.origY + '%';
-    scene.style.transform =
-      `rotateX(${cfg.sceneTiltX}deg) rotateY(${cfg.sceneTiltY}deg) skewX(${cfg.sceneSkewX}deg)`;
-  }
+  // ── Built-in presets ──────────────────────────────────
+  const BUILT_IN = [
+    { name: 'Default', values: { ...DEFAULTS } },
+    {
+      name: 'Subtle',
+      values: { ...DEFAULTS, cylR: 6000, zMult: 4.0, maxDeg: 5, flatZone: 220, fadeZone: 400, sensitivity: 0.06, friction: 0.95, crossSpeed: 0.20, speed1: 0.92, speed2: 0.84 },
+    },
+    {
+      name: 'Bold',
+      values: { ...DEFAULTS, cylR: 1200, zMult: 12.0, maxDeg: 16, flatZone: 50, fadeZone: 280, sensitivity: 0.13, friction: 0.90, crossSpeed: 0.70, speed1: 0.75, speed2: 0.50 },
+    },
+    {
+      name: 'Flat',
+      values: { ...DEFAULTS, cylR: 10000, zMult: 0, maxDeg: 2, flatZone: 600, fadeZone: 0, bowlStrength: 0, pitDepth: 0 },
+    },
+  ];
 
-  // ── Slider definition table ───────────────────────────
+  // ── Sections ──────────────────────────────────────────
   const sections = [
     {
       title: 'CYLINDER',
       rows: [
-        { id: 'cylR',   label: 'Radius (крутизна вигину колонок)',          unit: 'px', min: 100, max: 3000, step: 10  },
-        { id: 'zMult',  label: 'Z Depth (глибина провалу картинок у глиб)', unit: '×',  min: 0,   max: 8,    step: 0.1, fmt: v => v.toFixed(1) },
-        { id: 'maxDeg', label: 'Max Angle (ліміт нахилу крайніх карток)',   unit: '°',  min: 1,   max: 89,   step: 1   },
+        { id: 'cylR',   label: 'Radius',    tip: 'Радіус уявного циліндра вздовж якого вигинаються колонки. Менше значення — різкіший вигин (як трубочка), більше — майже пласка поверхня.', min: 100, max: 10000, step: 50, fmt: v => Math.round(v), unit: 'px' },
+        { id: 'zMult',  label: 'Z Depth',   tip: 'Наскільки далеко від глядача зміщуються картинки у глибину. 0 — всі в одній площині, 16 — максимальний просторовий провал.', min: 0, max: 16, step: 0.1, fmt: v => v.toFixed(1), unit: '×' },
+        { id: 'maxDeg', label: 'Max Angle', tip: 'Максимальний кут нахилу крайніх карток. Більше — агресивніша перспектива по краях сцени.', min: 1, max: 89, step: 1, fmt: v => Math.round(v), unit: '°' },
       ],
     },
     {
       title: 'ZONES',
       rows: [
-        { id: 'flatZone', label: 'Flat Zone (зона де картинки рівні, без ефекту)',       unit: 'px', min: 0, max: 600, step: 5 },
-        { id: 'fadeZone', label: 'Fade Zone (плавний перехід від рівних до вигнутих)',   unit: 'px', min: 0, max: 600, step: 5 },
+        { id: 'flatZone', label: 'Flat Zone', tip: 'Ширина центральної зони де картинки залишаються рівними без будь-якого вигину циліндра.', min: 0, max: 600, step: 5, fmt: v => Math.round(v), unit: 'px' },
+        { id: 'fadeZone', label: 'Fade Zone', tip: 'Ширина зони плавного переходу від рівних картинок до вигнутих. Більше = м\'якший перехід.', min: 0, max: 600, step: 5, fmt: v => Math.round(v), unit: 'px' },
       ],
     },
     {
       title: 'PERSPECTIVE',
       rows: [
-        { id: 'persp', label: 'Depth (різкість 3D, менше = агресивніша перспектива)',   unit: 'px', min: 200, max: 3000, step: 50 },
-        { id: 'origX', label: 'Origin X (горизонталь точки сходу, звідки "дивимось")',  unit: '%',  min: 0,   max: 100,  step: 1  },
-        { id: 'origY', label: 'Origin Y (вертикаль точки сходу)',                        unit: '%',  min: 0,   max: 100,  step: 1  },
+        { id: 'persp', label: 'Depth',    tip: 'Різкість CSS 3D перспективи. Менше — сильніший ефект "риб\'ячого ока". Більше — майже паралельна проекція без спотворень.', min: 200, max: 3000, step: 50, fmt: v => Math.round(v), unit: 'px' },
+        { id: 'origX', label: 'Origin X', tip: 'Горизонтальне положення точки сходу — звідки ніби "дивимось" на 3D-сцену. 50% = центр екрану, 85% = правіше від центру.', min: 0, max: 100, step: 1, fmt: v => Math.round(v), unit: '%' },
+        { id: 'origY', label: 'Origin Y', tip: 'Вертикальне положення точки сходу. 0% = верхній край, 100% = нижній. Впливає на відчуття висоти огляду.', min: 0, max: 100, step: 1, fmt: v => Math.round(v), unit: '%' },
       ],
     },
     {
       title: 'SCROLL',
       rows: [
-        { id: 'sensitivity', label: 'Sensitivity (чутливість до руху миші/трекпаду)',   unit: '',   min: 0.01, max: 0.5,  step: 0.01, fmt: v => v.toFixed(2) },
-        { id: 'friction',    label: 'Friction (тертя — як швидко зупиняється скрол)',   unit: '',   min: 0.80, max: 0.99, step: 0.01, fmt: v => v.toFixed(2) },
-        { id: 'maxVel',      label: 'Max Velocity (максимальна швидкість прокрутки)',   unit: 'px', min: 20,   max: 400,  step: 5    },
-        { id: 'smoothR',     label: 'Smoothness (плавність руху колонок)',              unit: '',   min: 0,    max: 98,   step: 1    },
-        { id: 'shrinkDelay', label: 'Shrink Delay (затримка повернення до повного розміру)', unit: 'ms', min: 0, max: 600, step: 10  },
+        { id: 'sensitivity', label: 'Sensitivity', tip: 'Чутливість до руху миші або трекпаду. Більше — швидша реакція на менший рух пальця.', min: 0.01, max: 0.5, step: 0.01, fmt: v => v.toFixed(2), unit: '' },
+        { id: 'friction',    label: 'Friction',    tip: 'Тертя — як швидко зупиняється скрол після відпускання. 0.99 = дуже плавне та довге гальмування, 0.80 = майже миттєва зупинка. Графік показує криву загасання.', min: 0.80, max: 0.999, step: 0.001, fmt: v => v.toFixed(3), unit: '', graph: 'friction' },
+        { id: 'maxVel',      label: 'Max Velocity', tip: 'Максимальна швидкість прокрутки в пікселях за кадр. Обмежує "розкид" при різких та швидких рухах.', min: 20, max: 400, step: 5, fmt: v => Math.round(v), unit: 'px' },
+        { id: 'smoothR',     label: 'Smoothness',   tip: 'Кількість кадрів для усереднення швидкості колонок. Більше = плавніший, але менш чуйний рух.', min: 0, max: 98, step: 1, fmt: v => Math.round(v), unit: '' },
+        { id: 'shrinkDelay', label: 'Shrink Delay', tip: 'Затримка перед поверненням карток до повного розміру після зупинки скролу. 0 = миттєво, 600 = затримка 600мс.', min: 0, max: 600, step: 10, fmt: v => Math.round(v), unit: 'ms' },
       ],
     },
     {
       title: 'CROSSHAIR',
       rows: [
-        { id: 'crossSpeed',  label: 'Spin Speed (швидкість обертання плюсика при скролі)',  unit: '×', min: 0, max: 2,  step: 0.05, fmt: v => v.toFixed(2) },
-        { id: 'crossSmooth', label: 'Stop Smooth (плавність зупинки плюсика)',              unit: '',  min: 0, max: 98, step: 1    },
+        { id: 'crossSpeed',  label: 'Spin Speed',  tip: 'Швидкість обертання плюсика-перехрестя. Права панель крутить в протилежному напрямку від лівої.', min: 0, max: 2, step: 0.05, fmt: v => v.toFixed(2), unit: '×' },
+        { id: 'crossSmooth', label: 'Stop Smooth', tip: 'Плавність зупинки плюсика. Більше значення — довше крутиться після закінчення скролу.', min: 0, max: 98, step: 1, fmt: v => Math.round(v), unit: '' },
       ],
     },
     {
       title: 'PARALLAX',
       rows: [
-        { id: 'speed0', label: 'Column 1 (швидкість лівої колонки)',    unit: '×', min: 0.1, max: 2, step: 0.05, fmt: v => v.toFixed(2) },
-        { id: 'speed1', label: 'Column 2 (швидкість середньої колонки)',unit: '×', min: 0.1, max: 2, step: 0.05, fmt: v => v.toFixed(2) },
-        { id: 'speed2', label: 'Column 3 (швидкість правої колонки)',   unit: '×', min: 0.1, max: 2, step: 0.05, fmt: v => v.toFixed(2) },
+        { id: 'speed0', label: 'Column 1', tip: 'Швидкість лівої колонки thumbnail відносно скролу. 1.0 = синхронно зі скролом, більше = швидше.', min: 0.1, max: 2, step: 0.05, fmt: v => v.toFixed(2), unit: '×' },
+        { id: 'speed1', label: 'Column 2', tip: 'Швидкість середньої колонки. Зазвичай трохи менша ніж Column 1 — створює відчуття паралакс-глибини.', min: 0.1, max: 2, step: 0.05, fmt: v => v.toFixed(2), unit: '×' },
+        { id: 'speed2', label: 'Column 3', tip: 'Швидкість правої колонки. Найменша для найбільш "далекого" відчуття у просторі.', min: 0.1, max: 2, step: 0.05, fmt: v => v.toFixed(2), unit: '×' },
       ],
     },
     {
       title: 'SHAPE',
       rows: [
-        { id: 'sceneTiltX', label: 'Tilt X (нахил сцени вперед / назад)',          unit: '°', min: -40, max: 40, step: 0.5, fmt: v => v.toFixed(1) },
-        { id: 'sceneTiltY', label: 'Tilt Y (нахил сцени вліво / вправо)',           unit: '°', min: -40, max: 40, step: 0.5, fmt: v => v.toFixed(1) },
-        { id: 'sceneSkewX', label: 'Skew X (горизонтальний скіс всієї сцени)',     unit: '°', min: -30, max: 30, step: 0.5, fmt: v => v.toFixed(1) },
-        { id: 'cylAxis',      label: 'Cylinder Axis (0=верт. ↕  1=горизонт. ↔)',                    unit: '',  min: 0, max: 1,   step: 0.05, fmt: v => v.toFixed(2) },
-        { id: 'bowlStrength', label: 'Bowl Depth (глибина чаші — вигин лівої/правої колонок у глиб)', unit: '×', min: 0, max: 3,   step: 0.05, fmt: v => v.toFixed(2) },
+        { id: 'sceneTiltX',   label: 'Tilt X',      tip: 'Нахил всієї 3D-сцени вперед або назад (по осі X). 0 = нейтральне положення.', min: -40, max: 40, step: 0.5, fmt: v => v.toFixed(1), unit: '°' },
+        { id: 'sceneTiltY',   label: 'Tilt Y',       tip: 'Нахил сцени вліво або вправо (по осі Y). 0 = нейтральне положення.', min: -40, max: 40, step: 0.5, fmt: v => v.toFixed(1), unit: '°' },
+        { id: 'sceneSkewX',   label: 'Skew X',       tip: 'Горизонтальний скіс всієї сцени. Надає відчуття динаміки, руху або нестабільності.', min: -30, max: 30, step: 0.5, fmt: v => v.toFixed(1), unit: '°' },
+        { id: 'cylAxis',      label: 'Cylinder Axis', tip: 'Вісь циліндра. 0 = вертикальний (↕ — колонки вигинаються зліва-направо), 1 = горизонтальний (↔). Можна змішувати.', min: 0, max: 1, step: 0.05, fmt: v => v.toFixed(2), unit: '' },
+        { id: 'bowlStrength', label: 'Bowl Depth',   tip: 'Глибина ефекту "чаші" — крайні колонки додатково вигинаються у глибину. 0 = вимкнено.', min: 0, max: 3, step: 0.05, fmt: v => v.toFixed(2), unit: '×' },
       ],
     },
     {
       title: 'PIT',
       rows: [
-        { id: 'pitCenterY', label: 'Pit Position (де знаходиться яма — 0=верх, 1=низ екрану)',   unit: '',   min: 0,    max: 1,    step: 0.01, fmt: v => v.toFixed(2) },
-        { id: 'pitRadius',  label: 'Pit Width (ширина ями — менше=вузька, більше=широка яма)',   unit: 'px', min: 50,   max: 600,  step: 10 },
-        { id: 'pitDepth',   label: 'Pit Depth (глибина провалу — картки тонуть у дно)',          unit: 'px', min: 0,    max: 2000, step: 10 },
+        { id: 'pitCenterY', label: 'Position', tip: 'Вертикальне положення "ями". 0 = верх екрану, 1 = низ. Звідси починається провал карток углиб.', min: 0, max: 1, step: 0.01, fmt: v => v.toFixed(2), unit: '' },
+        { id: 'pitRadius',  label: 'Width',    tip: 'Ширина зони провалу. Менше = вузька різка яма, більше = широка поступова западина.', min: 50, max: 600, step: 10, fmt: v => Math.round(v), unit: 'px' },
+        { id: 'pitDepth',   label: 'Depth',    tip: 'Глибина провалу карток у "яму". 0 = ефект вимкнено. Більше = картки глибше тонуть при наближенні до центру.', min: 0, max: 2000, step: 10, fmt: v => Math.round(v), unit: 'px' },
       ],
     },
   ];
 
-  // ── Build panel HTML ──────────────────────────────────
-  let html = `<div id="debug-header"><span>CURVE & ANIMATION</span><button id="debug-copy">COPY</button></div>`;
-  for (const sec of sections) {
-    html += `<div class="debug-section">${sec.title}</div>`;
-    for (const r of sec.rows) {
-      const val = cfg[r.id];
-      const disp = r.fmt ? r.fmt(val) : val;
-      html += `
-        <div class="debug-row">
-          <label>${r.label} <span id="v-${r.id}">${disp}</span>${r.unit}</label>
-          <input type="range" id="s-${r.id}" min="${r.min}" max="${r.max}" step="${r.step}" value="${val}">
-        </div>`;
-    }
+  // ── CSS apply ─────────────────────────────────────────
+  const scene = document.getElementById('col-3d-scene');
+  function applyCSS() {
+    scene.style.perspective       = cfg.persp + 'px';
+    scene.style.perspectiveOrigin = cfg.origX + '% ' + cfg.origY + '%';
+    scene.style.transform = `rotateX(${cfg.sceneTiltX}deg) rotateY(${cfg.sceneTiltY}deg) skewX(${cfg.sceneSkewX}deg)`;
   }
 
+  // ── User presets (localStorage) ───────────────────────
+  const STORAGE_KEY = 'portfolio-debug-presets';
+  function getUserPresets() { try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'); } catch { return []; } }
+  function saveUserPresets(p) { localStorage.setItem(STORAGE_KEY, JSON.stringify(p)); }
+  function getAllPresets()    { return [...BUILT_IN, ...getUserPresets()]; }
+
+  // ── Build panel DOM ───────────────────────────────────
   const panel = document.createElement('div');
-  panel.id = 'debug-panel';
-  panel.innerHTML = html;
+  panel.id = 'dbg-panel';
   document.body.appendChild(panel);
 
+  // Header
+  panel.insertAdjacentHTML('beforeend', `
+    <div id="dbg-header">
+      <span>COMPOSITION</span>
+      <button id="dbg-close">✕</button>
+    </div>
+  `);
+
+  // Preset row
+  panel.insertAdjacentHTML('beforeend', `
+    <div id="dbg-preset-row">
+      <select id="dbg-sel"></select>
+      <button id="dbg-save-btn" title="Зберегти поточний стан як пресет">✦</button>
+      <button id="dbg-del-btn"  title="Видалити збережений пресет">✕</button>
+    </div>
+    <div id="dbg-action-row">
+      <button id="dbg-copy-btn">⊞ Copy</button>
+      <button id="dbg-reset-btn">↺ Reset</button>
+    </div>
+    <div class="dbg-div"></div>
+  `);
+
+  // Sections
+  for (const sec of sections) {
+    const secEl = document.createElement('div');
+    secEl.className = 'dbg-sec';
+
+    const head = document.createElement('div');
+    head.className = 'dbg-sec-head';
+    head.innerHTML = `<span>${sec.title}</span><span class="dbg-arrow">▾</span>`;
+    secEl.appendChild(head);
+
+    const body = document.createElement('div');
+    body.className = 'dbg-sec-body';
+
+    let collapsed = false;
+    head.addEventListener('click', () => {
+      collapsed = !collapsed;
+      body.style.display = collapsed ? 'none' : '';
+      head.querySelector('.dbg-arrow').textContent = collapsed ? '▸' : '▾';
+    });
+
+    for (const r of sec.rows) {
+      const val  = cfg[r.id];
+      const disp = r.fmt ? r.fmt(val) : val;
+
+      const row = document.createElement('div');
+      row.className = 'dbg-row';
+      row.innerHTML = `
+        <div class="dbg-row-top">
+          <span class="dbg-lbl" data-tip="${r.tip}">${r.label}</span>
+          <span class="dbg-val" id="v-${r.id}">${disp}${r.unit}</span>
+        </div>
+        <input type="range" class="dbg-slider" id="s-${r.id}"
+          min="${r.min}" max="${r.max}" step="${r.step}" value="${val}">
+        ${r.graph === 'friction' ? '<canvas id="dbg-curve" width="240" height="36" class="dbg-graph"></canvas>' : ''}
+      `;
+      body.appendChild(row);
+    }
+
+    secEl.appendChild(body);
+    panel.appendChild(secEl);
+  }
+
   // ── Toggle button ─────────────────────────────────────
-  const btn = document.createElement('button');
-  btn.id = 'debug-toggle';
-  btn.innerText = '⌘';
-  document.body.appendChild(btn);
+  const toggleBtn = document.createElement('button');
+  toggleBtn.id = 'dbg-toggle';
+  toggleBtn.textContent = '⌘';
+  document.body.appendChild(toggleBtn);
 
-  let open = false;
-  btn.addEventListener('click', () => {
-    open = !open;
-    panel.classList.toggle('is-open', open);
-    btn.classList.toggle('is-active', open);
-  });
+  // ── Tooltip element ───────────────────────────────────
+  const tooltip = document.createElement('div');
+  tooltip.id = 'dbg-tip';
+  document.body.appendChild(tooltip);
 
-  // ── Wire up all sliders ───────────────────────────────
+  // ── Friction curve graph ──────────────────────────────
+  function drawFriction() {
+    const c = document.getElementById('dbg-curve');
+    if (!c) return;
+    const ctx = c.getContext('2d');
+    const W = c.width, H = c.height;
+    ctx.clearRect(0, 0, W, H);
+    ctx.fillStyle = 'rgba(255,255,255,0.04)';
+    ctx.fillRect(0, 0, W, H);
+    ctx.beginPath();
+    ctx.strokeStyle = '#4a9eff';
+    ctx.lineWidth = 1.5;
+    let v = 1;
+    for (let x = 0; x < W; x++) {
+      const y = H - 4 - v * (H - 8);
+      x === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+      v *= cfg.friction;
+    }
+    ctx.stroke();
+    // zero line
+    ctx.strokeStyle = 'rgba(255,255,255,0.08)';
+    ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(0, H - 4); ctx.lineTo(W, H - 4); ctx.stroke();
+  }
+
+  // ── Sync all sliders to current cfg ──────────────────
+  function syncSliders() {
+    for (const sec of sections) {
+      for (const r of sec.rows) {
+        const inp = document.getElementById('s-' + r.id);
+        const val = document.getElementById('v-' + r.id);
+        if (!inp || !val) continue;
+        inp.value = cfg[r.id];
+        val.textContent = (r.fmt ? r.fmt(cfg[r.id]) : cfg[r.id]) + (r.unit || '');
+      }
+    }
+    drawFriction();
+  }
+
+  // ── Wire sliders ──────────────────────────────────────
   for (const sec of sections) {
     for (const r of sec.rows) {
-      const input = document.getElementById('s-' + r.id);
-      const valEl = document.getElementById('v-' + r.id);
-      input.addEventListener('input', function () {
+      const inp = document.getElementById('s-' + r.id);
+      const val = document.getElementById('v-' + r.id);
+      inp.addEventListener('input', function () {
         cfg[r.id] = +this.value;
-        valEl.textContent = r.fmt ? r.fmt(+this.value) : this.value;
+        val.textContent = (r.fmt ? r.fmt(+this.value) : this.value) + (r.unit || '');
         applyCSS();
+        if (r.graph === 'friction') drawFriction();
       });
     }
   }
 
-  // ── Copy all values ───────────────────────────────────
-  document.getElementById('debug-copy').addEventListener('click', () => {
-    const lines = [
-      '// Cylinder',
-      `CYLR:      ${cfg.cylR}`,
-      `zMult:     ${cfg.zMult.toFixed(1)}`,
-      `maxDeg:    ${cfg.maxDeg}`,
-      '// Zones',
-      `flatZone:  ${cfg.flatZone}`,
-      `fadeZone:  ${cfg.fadeZone}`,
-      '// Perspective',
-      `perspective:        ${cfg.persp}px`,
-      `perspective-origin: ${cfg.origX}% ${cfg.origY}%`,
-      '// Scroll',
-      `sensitivity: ${cfg.sensitivity.toFixed(2)}`,
-      `friction:    ${cfg.friction.toFixed(2)}`,
-      `maxVel:      ${cfg.maxVel}`,
-      `smoothR:     ${cfg.smoothR}`,
-      `shrinkDelay: ${cfg.shrinkDelay}`,
-      '// Crosshair',
-      `crossSpeed:  ${cfg.crossSpeed.toFixed(2)}`,
-      `crossSmooth: ${cfg.crossSmooth}`,
-      '// Parallax',
-      `speeds: [${cfg.speed0.toFixed(2)}, ${cfg.speed1.toFixed(2)}, ${cfg.speed2.toFixed(2)}]`,
-      '// Shape',
-      `sceneTiltX: ${cfg.sceneTiltX.toFixed(1)}`,
-      `sceneTiltY: ${cfg.sceneTiltY.toFixed(1)}`,
-      `sceneSkewX: ${cfg.sceneSkewX.toFixed(1)}`,
-      `cylAxis:      ${cfg.cylAxis.toFixed(2)}`,
-      `bowlStrength: ${cfg.bowlStrength.toFixed(2)}`,
-      '// Pit',
-      `pitCenterY: ${cfg.pitCenterY.toFixed(2)}`,
-      `pitRadius:  ${cfg.pitRadius}`,
-      `pitDepth:   ${cfg.pitDepth}`,
-    ];
-    navigator.clipboard.writeText(lines.join('\n')).catch(() => {});
-    const b = document.getElementById('debug-copy');
-    b.textContent = 'COPIED!';
-    setTimeout(() => { b.textContent = 'COPY'; }, 1500);
+  // ── Preset select ─────────────────────────────────────
+  function rebuildSelect(activeName) {
+    const sel = document.getElementById('dbg-sel');
+    sel.innerHTML = '';
+    for (const p of getAllPresets()) {
+      const opt = document.createElement('option');
+      opt.value = p.name;
+      opt.textContent = p.name;
+      if (p.name === activeName) opt.selected = true;
+      sel.appendChild(opt);
+    }
+    // Show delete only for user presets
+    const isUser = getUserPresets().some(p => p.name === sel.value);
+    document.getElementById('dbg-del-btn').style.display = isUser ? '' : 'none';
+  }
+  rebuildSelect('Default');
+
+  document.getElementById('dbg-sel').addEventListener('change', function () {
+    const preset = getAllPresets().find(p => p.name === this.value);
+    if (!preset) return;
+    Object.assign(cfg, preset.values);
+    applyCSS(); syncSliders();
+    const isUser = getUserPresets().some(p => p.name === this.value);
+    document.getElementById('dbg-del-btn').style.display = isUser ? '' : 'none';
   });
 
-  // ── Styles ───────────────────────────────────────────
+  document.getElementById('dbg-save-btn').addEventListener('click', () => {
+    const name = prompt('Назва пресету:', 'Preset ' + (getUserPresets().length + 1));
+    if (!name) return;
+    const list = getUserPresets();
+    const ex   = list.findIndex(p => p.name === name);
+    const entry = { name, values: { ...cfg } };
+    if (ex >= 0) list[ex] = entry; else list.push(entry);
+    saveUserPresets(list);
+    rebuildSelect(name);
+  });
+
+  document.getElementById('dbg-del-btn').addEventListener('click', () => {
+    const sel  = document.getElementById('dbg-sel');
+    const name = sel.value;
+    if (BUILT_IN.some(p => p.name === name)) return;
+    const list = getUserPresets().filter(p => p.name !== name);
+    saveUserPresets(list);
+    rebuildSelect('Default');
+    const preset = getAllPresets().find(p => p.name === 'Default');
+    Object.assign(cfg, preset.values); applyCSS(); syncSliders();
+  });
+
+  // ── Copy ──────────────────────────────────────────────
+  document.getElementById('dbg-copy-btn').addEventListener('click', () => {
+    navigator.clipboard.writeText(JSON.stringify(cfg, null, 2)).catch(() => {});
+    const b = document.getElementById('dbg-copy-btn');
+    b.textContent = '✓ Copied';
+    setTimeout(() => { b.textContent = '⊞ Copy'; }, 1500);
+  });
+
+  // ── Reset ─────────────────────────────────────────────
+  document.getElementById('dbg-reset-btn').addEventListener('click', () => {
+    Object.assign(cfg, DEFAULTS); applyCSS(); syncSliders();
+    rebuildSelect('Default');
+    document.getElementById('dbg-sel').value = 'Default';
+  });
+
+  // ── Toggle open/close ─────────────────────────────────
+  let isOpen = false;
+  function openPanel()  { isOpen = true;  panel.classList.add('is-open');    toggleBtn.classList.add('is-active');    drawFriction(); }
+  function closePanel() { isOpen = false; panel.classList.remove('is-open'); toggleBtn.classList.remove('is-active'); }
+
+  toggleBtn.addEventListener('click', () => isOpen ? closePanel() : openPanel());
+  document.getElementById('dbg-close').addEventListener('click', closePanel);
+  document.addEventListener('keydown', e => { if (e.key === 'Escape' && isOpen) closePanel(); });
+
+  // ── Tooltip ───────────────────────────────────────────
+  let tipTimer = null;
+  document.addEventListener('mouseover', e => {
+    const lbl = e.target.closest('.dbg-lbl');
+    if (!lbl?.dataset.tip) return;
+    clearTimeout(tipTimer);
+    tipTimer = setTimeout(() => {
+      tooltip.textContent = lbl.dataset.tip;
+      tooltip.classList.add('is-on');
+      const pr = panel.getBoundingClientRect();
+      const lr = lbl.getBoundingClientRect();
+      tooltip.style.left = (pr.right + 10) + 'px';
+      const top = Math.max(8, Math.min(lr.top, window.innerHeight - tooltip.offsetHeight - 8));
+      tooltip.style.top = top + 'px';
+    }, 300);
+  });
+  document.addEventListener('mouseout', e => {
+    if (e.target.closest('.dbg-lbl')) {
+      clearTimeout(tipTimer);
+      tooltip.classList.remove('is-on');
+    }
+  });
+
+  // ── Styles ────────────────────────────────────────────
   const style = document.createElement('style');
   style.textContent = `
-    #debug-toggle {
-      position: fixed;
-      bottom: 10px;
-      left: 10px;
-      z-index: 9999;
-      width: 28px;
-      height: 28px;
-      border-radius: 6px;
-      border: none;
-      background: rgba(255,255,255,0.12);
-      color: #fff;
-      font-size: 14px;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
+    #dbg-toggle {
+      position: fixed; bottom: 10px; left: 10px; z-index: 9999;
+      width: 28px; height: 28px; border-radius: 6px; border: none;
+      background: rgba(255,255,255,0.12); color: #fff; font-size: 14px;
+      cursor: pointer; display: flex; align-items: center; justify-content: center;
       transition: background 0.2s;
     }
-    #debug-toggle.is-active { background: rgba(255,255,255,0.28); }
+    #dbg-toggle.is-active { background: rgba(255,255,255,0.28); }
 
-    #debug-panel {
-      position: fixed;
-      bottom: 44px;
-      left: 10px;
-      z-index: 9998;
-      width: 272px;
-      max-height: calc(100vh - 120px);
-      overflow-y: auto;
-      background: rgba(14,14,14,0.96);
-      backdrop-filter: blur(16px);
-      -webkit-backdrop-filter: blur(16px);
-      border: 1px solid rgba(255,255,255,0.07);
-      border-radius: 12px;
-      padding: 14px;
-      font-family: 'Inter', sans-serif;
-      font-size: 11px;
-      color: #ccc;
-      display: none;
-      flex-direction: column;
-      gap: 7px;
-      scrollbar-width: thin;
-      scrollbar-color: rgba(255,255,255,0.1) transparent;
+    #dbg-panel {
+      position: fixed; bottom: 44px; left: 10px; z-index: 9998;
+      width: 276px; max-height: calc(100vh - 58px); overflow-y: auto;
+      background: rgba(14,14,14,0.97);
+      backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+      border: 1px solid rgba(255,255,255,0.07); border-radius: 14px;
+      padding: 14px 14px 12px;
+      font-family: 'Inter', sans-serif; font-size: 11px; color: #ccc;
+      display: none; flex-direction: column; gap: 0;
+      scrollbar-width: thin; scrollbar-color: rgba(255,255,255,0.1) transparent;
     }
-    #debug-panel.is-open { display: flex; }
+    #dbg-panel.is-open { display: flex; }
 
-    #debug-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      color: #fff;
-      font-weight: 700;
-      font-size: 10px;
-      letter-spacing: 0.8px;
-      margin-bottom: 4px;
+    #dbg-header {
+      display: flex; justify-content: space-between; align-items: center;
+      font-size: 10px; font-weight: 700; letter-spacing: 1px; color: #fff;
+      margin-bottom: 11px; flex-shrink: 0;
     }
-    #debug-copy {
-      background: rgba(255,255,255,0.1);
-      border: none;
-      border-radius: 4px;
-      color: #fff;
-      font-size: 9px;
-      font-weight: 600;
-      letter-spacing: 0.5px;
-      padding: 3px 8px;
-      cursor: pointer;
-      font-family: inherit;
+    #dbg-close {
+      background: none; border: none; color: #444; font-size: 13px;
+      cursor: pointer; padding: 0; line-height: 1;
     }
-    #debug-copy:hover { background: rgba(255,255,255,0.2); }
+    #dbg-close:hover { color: #fff; }
 
-    .debug-section {
-      font-size: 9px;
-      font-weight: 700;
-      letter-spacing: 1.2px;
-      color: #444;
-      margin-top: 6px;
-      padding-top: 6px;
-      border-top: 1px solid rgba(255,255,255,0.05);
+    #dbg-preset-row {
+      display: flex; gap: 5px; margin-bottom: 6px;
     }
-    .debug-section:first-of-type { margin-top: 0; border-top: none; }
+    #dbg-sel {
+      flex: 1; background: rgba(255,255,255,0.07);
+      border: 1px solid rgba(255,255,255,0.1); border-radius: 6px;
+      color: #ddd; font-family: inherit; font-size: 11px;
+      padding: 5px 8px; cursor: pointer; outline: none;
+    }
+    #dbg-save-btn, #dbg-del-btn {
+      background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.09);
+      border-radius: 6px; color: #888; font-size: 11px; padding: 5px 9px;
+      cursor: pointer; transition: background 0.15s, color 0.15s;
+    }
+    #dbg-save-btn:hover { background: rgba(255,255,255,0.14); color: #fff; }
+    #dbg-del-btn:hover  { background: rgba(255,80,80,0.15);   color: #f88; }
+    #dbg-del-btn { display: none; }
 
-    .debug-row { display: flex; flex-direction: column; gap: 3px; }
-    .debug-row label {
-      display: flex;
-      justify-content: space-between;
-      color: #777;
-      gap: 6px;
+    #dbg-action-row {
+      display: flex; gap: 5px; margin-bottom: 10px;
     }
-    .debug-row label span { color: #eee; font-weight: 600; }
-    .debug-row input[type=range] {
-      width: 100%;
-      accent-color: #fff;
-      cursor: pointer;
-      height: 2px;
+    #dbg-copy-btn, #dbg-reset-btn {
+      flex: 1; background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.08); border-radius: 6px;
+      color: #777; font-family: inherit; font-size: 10px; font-weight: 600;
+      letter-spacing: 0.3px; padding: 6px 0; cursor: pointer;
+      transition: background 0.15s, color 0.15s;
     }
+    #dbg-copy-btn:hover, #dbg-reset-btn:hover {
+      background: rgba(255,255,255,0.1); color: #fff;
+    }
+
+    .dbg-div {
+      height: 1px; background: rgba(255,255,255,0.06);
+      margin: 2px 0 6px; flex-shrink: 0;
+    }
+
+    .dbg-sec { flex-shrink: 0; }
+    .dbg-sec-head {
+      display: flex; justify-content: space-between; align-items: center;
+      font-size: 9px; font-weight: 700; letter-spacing: 1.2px; color: #3a3a3a;
+      padding: 7px 0 5px; border-top: 1px solid rgba(255,255,255,0.05);
+      cursor: pointer; user-select: none; transition: color 0.15s;
+    }
+    .dbg-sec + .dbg-sec .dbg-sec-head { }
+    .dbg-sec:first-of-type .dbg-sec-head { border-top: none; }
+    .dbg-sec-head:hover { color: #666; }
+    .dbg-arrow { font-size: 8px; color: #2a2a2a; }
+
+    .dbg-sec-body { display: flex; flex-direction: column; gap: 7px; padding-bottom: 6px; }
+
+    .dbg-row { display: flex; flex-direction: column; gap: 3px; }
+    .dbg-row-top { display: flex; justify-content: space-between; align-items: center; }
+    .dbg-lbl {
+      color: #5a5a5a; font-size: 11px; cursor: default;
+      border-bottom: 1px solid transparent;
+      transition: color 0.15s, border-color 0.15s;
+    }
+    .dbg-lbl:hover { color: #aaa; border-bottom-color: rgba(255,255,255,0.2); }
+    .dbg-val {
+      color: #ccc; font-weight: 600; font-size: 11px;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .dbg-slider {
+      width: 100%; height: 2px; cursor: pointer;
+      -webkit-appearance: none; appearance: none;
+      background: rgba(255,255,255,0.1); border-radius: 1px;
+    }
+    .dbg-slider::-webkit-slider-thumb {
+      -webkit-appearance: none; width: 12px; height: 12px;
+      border-radius: 50%; background: #fff; cursor: pointer;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.5);
+    }
+    .dbg-slider::-moz-range-thumb {
+      width: 12px; height: 12px; border-radius: 50%;
+      background: #fff; border: none; cursor: pointer;
+    }
+
+    .dbg-graph {
+      width: 100%; height: 36px; border-radius: 4px;
+      display: block; margin-top: 3px;
+    }
+
+    #dbg-tip {
+      position: fixed; z-index: 100000;
+      max-width: 210px; padding: 10px 12px;
+      background: rgba(22,22,22,0.98);
+      backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(255,255,255,0.09); border-radius: 9px;
+      font-family: 'Inter', sans-serif; font-size: 11px; color: #aaa;
+      line-height: 1.55; pointer-events: none;
+      opacity: 0; transition: opacity 0.15s;
+    }
+    #dbg-tip.is-on { opacity: 1; }
   `;
   document.head.appendChild(style);
 
   applyCSS();
+  drawFriction();
 })();
