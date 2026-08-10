@@ -13,6 +13,7 @@
     speed0: 1.00, speed1: 0.85, speed2: 0.70,
     sceneTiltX: 0, sceneTiltY: 0, sceneSkewX: 0, cylAxis: 0, bowlStrength: 0,
     pitCenterY: 0.75, pitRadius: 200, pitDepth: 0,
+    curveSharp: 1.0, curveBias: 0,
   };
 
   window.__cylCfg = Object.assign({}, DEFAULTS);
@@ -103,6 +104,13 @@
         { id: 'pitDepth',   label: 'Depth',    tip: 'Глибина провалу карток у "яму". 0 = ефект вимкнено. Більше = картки глибше тонуть при наближенні до центру.', min: 0, max: 2000, step: 10, fmt: v => Math.round(v), unit: 'px' },
       ],
     },
+    {
+      title: 'CURVE',
+      rows: [
+        { id: 'curveSharp', label: 'Sharpness', tip: 'Крутість кривої розгортки ефекту. 1.0 = лінійно. > 1 = плавний старт і різкий фінал (ефект концентрується на краях). < 1 = різкий старт і плавне загасання (ефект сильніший поряд з центром).', min: 0.2, max: 3.0, step: 0.05, fmt: v => v.toFixed(2), unit: '' },
+        { id: 'curveBias',  label: 'Travel',    tip: 'Зсув кривої вгору або вниз. 0 = симетрично. + = ефект відчутніший ближче до 1. − = ефект різко набирає силу вже від початку зони.', min: -0.95, max: 0.95, step: 0.05, fmt: v => v.toFixed(2), unit: '', graph: 'curve' },
+      ],
+    },
   ];
 
   // ── CSS apply ─────────────────────────────────────────
@@ -179,7 +187,7 @@
         </div>
         <input type="range" class="dbg-slider" id="s-${r.id}"
           min="${r.min}" max="${r.max}" step="${r.step}" value="${val}">
-        ${r.graph === 'friction' ? '<canvas id="dbg-curve" width="240" height="36" class="dbg-graph"></canvas>' : ''}
+        ${r.graph === 'friction' ? '<canvas id="dbg-curve" width="240" height="36" class="dbg-graph"></canvas>' : r.graph === 'curve' ? '<canvas id="dbg-curve-shape" width="240" height="80" class="dbg-graph"></canvas>' : ''}
       `;
       body.appendChild(row);
     }
@@ -224,6 +232,66 @@
     ctx.beginPath(); ctx.moveTo(0, H - 4); ctx.lineTo(W, H - 4); ctx.stroke();
   }
 
+  // ── Curve shape preview ───────────────────────────
+  function drawCurve() {
+    const canvas = document.getElementById('dbg-curve-shape');
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    const W = canvas.width, H = canvas.height;
+    ctx.clearRect(0, 0, W, H);
+
+    const pad = 8;
+    const iW = W - pad * 2, iH = H - pad * 2;
+
+    ctx.fillStyle = 'rgba(255,255,255,0.04)';
+    ctx.fillRect(0, 0, W, H);
+
+    // axis lines
+    ctx.strokeStyle = 'rgba(255,255,255,0.08)';
+    ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(pad, H - pad); ctx.lineTo(W - pad, H - pad); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(pad, pad);      ctx.lineTo(pad, H - pad);     ctx.stroke();
+
+    // linear reference diagonal
+    ctx.strokeStyle = 'rgba(255,255,255,0.12)';
+    ctx.lineWidth = 1;
+    ctx.setLineDash([3, 4]);
+    ctx.beginPath(); ctx.moveTo(pad, H - pad); ctx.lineTo(W - pad, pad); ctx.stroke();
+    ctx.setLineDash([]);
+
+    // actual curve
+    const sharp = cfg.curveSharp ?? 1.0;
+    const bias  = cfg.curveBias  ?? 0;
+
+    ctx.strokeStyle = '#4a9eff';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    for (let px = 0; px <= iW; px++) {
+      let t = px / iW;
+      if (Math.abs(sharp - 1.0) > 0.001) t = Math.pow(t, 1.0 / sharp);
+      if (Math.abs(bias) > 0.001) t = Math.max(0, Math.min(1, t + bias * t * (1 - t)));
+      const x = pad + px;
+      const y = H - pad - t * iH;
+      px === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+    }
+    ctx.stroke();
+
+    // dot at current sharpness/bias point (t=0.5 → mapped)
+    let tMid = 0.5;
+    if (Math.abs(sharp - 1.0) > 0.001) tMid = Math.pow(0.5, 1.0 / sharp);
+    if (Math.abs(bias) > 0.001) tMid = Math.max(0, Math.min(1, tMid + bias * tMid * (1 - tMid)));
+    ctx.fillStyle = '#4a9eff';
+    ctx.beginPath();
+    ctx.arc(pad + iW * 0.5, H - pad - tMid * iH, 3, 0, Math.PI * 2);
+    ctx.fill();
+
+    // axis labels
+    ctx.fillStyle = 'rgba(255,255,255,0.2)';
+    ctx.font = '8px Inter, sans-serif';
+    ctx.fillText('in', pad + 1, H - 1);
+    ctx.fillText('out', 1, pad + 7);
+  }
+
   // ── Sync all sliders to current cfg ──────────────────
   function syncSliders() {
     for (const sec of sections) {
@@ -236,6 +304,7 @@
       }
     }
     drawFriction();
+    drawCurve();
   }
 
   // ── Wire sliders ──────────────────────────────────────
@@ -248,6 +317,7 @@
         val.textContent = (r.fmt ? r.fmt(+this.value) : this.value) + (r.unit || '');
         applyCSS();
         if (r.graph === 'friction') drawFriction();
+        if (r.graph === 'curve' || r.id === 'curveSharp') drawCurve();
       });
     }
   }
@@ -317,7 +387,7 @@
 
   // ── Toggle open/close ─────────────────────────────────
   let isOpen = false;
-  function openPanel()  { isOpen = true;  panel.classList.add('is-open');    toggleBtn.classList.add('is-active');    drawFriction(); }
+  function openPanel()  { isOpen = true;  panel.classList.add('is-open');    toggleBtn.classList.add('is-active');    drawFriction(); drawCurve(); }
   function closePanel() { isOpen = false; panel.classList.remove('is-open'); toggleBtn.classList.remove('is-active'); }
 
   toggleBtn.addEventListener('click', () => isOpen ? closePanel() : openPanel());
@@ -483,4 +553,5 @@
 
   applyCSS();
   drawFriction();
+  drawCurve();
 })();
