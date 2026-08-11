@@ -403,10 +403,19 @@ img.portfolio-left-img,
   .portfolio-thumbs.col-2 { left: 4px;                                 right: auto; top: calc(38px - 9px);  }
   .portfolio-thumbs.col-3 { left: calc((100vw - 20px) / 2 + 16px);    right: auto; top: calc(38px + 10px); }
 
-  /* Mobile 3D: keep perspective for translateZ depth, drop rotateX/Y cylinder */
+  /* iOS Safari fix: overflow:hidden on .portfolio flattens preserve-3d ancestors.
+     Move perspective to direct parent of transformed elements so the 3D context
+     is contained between .portfolio-thumbs and .portfolio-thumb — no intermediate
+     overflow:hidden can interfere. */
   #col-3d-scene {
-    perspective: 900px !important;
-    perspective-origin: 50% 50% !important;
+    perspective: none !important;
+    perspective-origin: unset !important;
+  }
+
+  .portfolio-thumbs {
+    perspective: 900px;
+    perspective-origin: 50% 50%;
+    transform-style: flat; /* preserve-3d not needed — perspective is on direct parent */
   }
 
   .portfolio-thumb {
