@@ -116,7 +116,8 @@
   function applyCSS() {
     scene.style.perspective       = cfg.persp + 'px';
     scene.style.perspectiveOrigin = cfg.origX + '% ' + cfg.origY + '%';
-    scene.style.transform = `rotateX(${cfg.sceneTiltX}deg) rotateY(${cfg.sceneTiltY}deg) skewX(${cfg.sceneSkewX}deg)`;
+    // scene.style.transform is owned by portfolio.js tick() — it reads cfg.sceneTiltX/Y/skewX
+    // from __cylCfg and combines with the scroll bulge. No write needed here.
   }
 
   // ── User presets (localStorage) ───────────────────────

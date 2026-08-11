@@ -385,7 +385,6 @@ img.portfolio-left-img,
   #col-3d-scene {
     perspective: none !important;
     perspective-origin: 50% 50% !important;
-    transform: none !important;
   }
 
   .portfolio-thumbs {

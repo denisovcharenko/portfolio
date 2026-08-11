@@ -91,6 +91,8 @@ let descOpen = false;
 const MOBILE = window.innerWidth <= 599;
 let currentlyMobile = MOBILE;
 
+let sceneBulge = 0; // current lerped bulge angle (degrees)
+
 // ─── RESPONSIVE COLUMN SYSTEM ────────────────────────
 const COL_W        = 140;   // column width px
 const COL_G        = 20;    // gutter between columns px
@@ -133,6 +135,7 @@ const videoPool   = new Map(); // key → div element
 let poolContainer = null;
 
 // ─── ELEMENTS ────────────────────────────────────────
+const sceneEl     = document.getElementById('col-3d-scene');
 const leftPanel   = document.getElementById('portfolio-left');
 const crosshairEl = document.querySelector('.portfolio-crosshair svg');
 const descBtn     = document.getElementById('desc-btn');
@@ -483,6 +486,22 @@ function tick() {
     crossAngLY += (crossAngle - crossAngLY) * kCross;
     if (crosshairEl) crosshairEl.style.transform = `rotate(${crossAngLY}deg)`;
   }
+
+  // ── Scene bulge — velocity-driven rotateX on whole composition ──
+  // Average right-column velocity → target bulge angle (quadratic feel, like jesperlandberg)
+  const c2       = window.__cylCfg || {};
+  const avgVel   = (velR[0] + velR[1] + velR[2]) / 3;
+  const bulgeTarget = avgVel * Math.abs(avgVel) * 0.000018; // ~±4° at max scroll speed
+  const kBulge   = lerpK(72, dt); // snappy attach, smooth decay
+  sceneBulge    += (bulgeTarget - sceneBulge) * kBulge;
+  const bulgeDeg = Math.max(-5, Math.min(5, sceneBulge));
+  // Combine with debug-panel scene tilt (so both coexist)
+  const tiltX = (c2.sceneTiltX ?? 0) + bulgeDeg;
+  const tiltY =  c2.sceneTiltY ?? 0;
+  const skewX =  c2.sceneSkewX ?? 0;
+  sceneEl.style.transform = (Math.abs(tiltX) > 0.005 || Math.abs(tiltY) > 0.005 || Math.abs(skewX) > 0.005)
+    ? `rotateX(${tiltX.toFixed(3)}deg) rotateY(${tiltY.toFixed(3)}deg) skewX(${skewX.toFixed(3)}deg)`
+    : '';
 }
 
 // ─── WHEEL ───────────────────────────────────────────
