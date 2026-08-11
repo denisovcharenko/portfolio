@@ -246,7 +246,7 @@ function buildLeftPanel(proj) {
 
   leftContentCount = items.length;
 
-  const passes = MOBILE ? 1 : 2; // no infinite-scroll clones on mobile (native scroll)
+  const passes = 2;
   for (let pass = 0; pass < passes; pass++) {
     items.forEach((item, ci) => {
       if (item.type === 'video') {
@@ -741,14 +741,34 @@ function openMobileCase(idx) {
 
   if (descWrap) descWrap.classList.add('mobile-desc-on');
 
+  // Infinity scroll: after layout, attach a scroll listener that teleports
+  // back when the user enters the clone section (second half of content).
+  requestAnimationFrame(() => {
+    const loopH = leftClip.scrollHeight / 2;
+    if (loopH > 10) {
+      leftClip._loopH = loopH;
+      leftClip.addEventListener('scroll', mobileLoopScroll, { passive: true });
+    }
+  });
+
   const closeBtn = document.getElementById('mobile-close');
   if (closeBtn) closeBtn.classList.add('visible');
 
   gsap.fromTo(leftClip, { x: '100%' }, { x: '0%', duration: 0.38, ease: 'power3.out' });
 }
 
+function mobileLoopScroll() {
+  const loopH = leftClip._loopH;
+  if (!loopH) return;
+  const st = leftClip.scrollTop;
+  if (st >= loopH) leftClip.scrollTop = st - loopH;
+  else if (st < 0)  leftClip.scrollTop = st + loopH;
+}
+
 function closeMobileCase() {
   mobileCaseOpen = false;
+  leftClip.removeEventListener('scroll', mobileLoopScroll);
+  leftClip._loopH = 0;
   if (descOpen) setDescOpen(false);
   if (descWrap) descWrap.classList.remove('mobile-desc-on');
 

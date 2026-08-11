@@ -468,10 +468,10 @@ img.portfolio-left-img,
     visibility: visible;
   }
 
-  /* Left panel — off-screen by default, slides in below the nav */
+  /* Left panel — off-screen by default, slides in full-screen (nav sits above via z-index) */
   .portfolio-left-clip {
     position: fixed;
-    top: 38px;
+    top: 0;
     left: 0;
     right: 0;
     bottom: 0;
@@ -489,11 +489,10 @@ img.portfolio-left-img,
     pointer-events: auto;
   }
 
-  /* Left panel content — no extra padding, clip already starts below nav */
   .portfolio-left {
     transform: none !important;
     width: 100%;
-    padding-top: 0;
+    padding-top: 38px;
     padding-bottom: 40px;
     overflow: visible;
   }
