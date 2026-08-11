@@ -73,7 +73,7 @@
         { id: 'shrinkDelay',   label: 'Shrink Delay',   tip: 'Затримка перед поверненням карток до повного розміру після зупинки скролу. 0 = миттєво, 600 = затримка 600мс.', min: 0, max: 600, step: 10, fmt: v => Math.round(v), unit: 'ms' },
         { id: 'bulgeStrength', label: 'Bulge Tilt',     tip: 'Сила нахилу всієї сцени (rotateX) при скролі на десктопі. 0 = вимкнено.', min: 0, max: 100, step: 1, fmt: v => Math.round(v), unit: '' },
         { id: 'bulgeSmooth',   label: 'Bulge Decay',    tip: 'Плавність загасання вигину після зупинки скролу. Менше = різкіше повернення, більше = довше "дихає".', min: 0, max: 98, step: 1, fmt: v => Math.round(v), unit: '' },
-        { id: 'warpStrength',  label: 'Warp Strength',  tip: 'Сила pixel-warp ефекту на мобільному (SVG feDisplacementMap). Центр екрану вигинається до глядача при скролі — як у jesperlandberg. 0 = вимкнено.', min: 0, max: 100, step: 1, fmt: v => Math.round(v), unit: '' },
+        { id: 'warpStrength',  label: 'Warp Strength',  tip: 'Сила вигину композиції при скролі (translateZ по параболі). 0 = вимкнено, 500 = максимальний ефект.', min: 0, max: 500, step: 5, fmt: v => Math.round(v), unit: '' },
       ],
     },
     {
