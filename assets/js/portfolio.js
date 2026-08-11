@@ -468,9 +468,13 @@ function tick() {
       const pitFactor = Math.exp(-(pitDY * pitDY) / (2 * pitSigma * pitSigma));
       const zPit      = -pitDepth * pitFactor;
 
+      // Velocity-driven warp: parabolic Z boost, same as mobile but layered on top of cylinder
+      const tc    = Math.max(-1, Math.min(1, dy / (VH * 0.5)));
+      const zWarp = warpDepth * (1 - tc * tc);
+
       thumb.style.rotate    = '';
       thumb.style.translate = '';
-      thumb.style.transform = `rotateX(${rotX_f.toFixed(2)}deg) rotateY(${rotY_f.toFixed(2)}deg) translateZ(${(zCyl + zPit).toFixed(2)}px)`;
+      thumb.style.transform = `rotateX(${rotX_f.toFixed(2)}deg) rotateY(${rotY_f.toFixed(2)}deg) translateZ(${(zCyl + zPit + zWarp).toFixed(2)}px)`;
     });
   });
 
