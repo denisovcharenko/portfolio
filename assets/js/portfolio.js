@@ -491,8 +491,9 @@ function tick() {
   // Average right-column velocity → target bulge angle (quadratic feel, like jesperlandberg)
   const c2       = window.__cylCfg || {};
   const avgVel   = (velR[0] + velR[1] + velR[2]) / 3;
-  const bulgeTarget = avgVel * Math.abs(avgVel) * 0.000018; // ~±4° at max scroll speed
-  const kBulge   = lerpK(72, dt); // snappy attach, smooth decay
+  const bulgeCoef = (c2.bulgeStrength ?? 18) * 1e-6;
+  const bulgeTarget = avgVel * Math.abs(avgVel) * bulgeCoef;
+  const kBulge   = lerpK(c2.bulgeSmooth ?? 72, dt);
   sceneBulge    += (bulgeTarget - sceneBulge) * kBulge;
   const bulgeDeg = Math.max(-5, Math.min(5, sceneBulge));
   // Combine with debug-panel scene tilt (so both coexist)
