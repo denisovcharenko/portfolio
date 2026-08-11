@@ -92,7 +92,7 @@ const MOBILE = window.innerWidth <= 599;
 let currentlyMobile = MOBILE;
 
 let sceneBulge = 0; // current lerped bulge angle (degrees)
-let warpDisplace = null; // <feDisplacementMap> reference for mobile SVG warp
+let warpDepth  = 0; // lerped translateZ amplitude (px) for mobile parabolic depth
 
 // ─── RESPONSIVE COLUMN SYSTEM ────────────────────────
 const COL_W        = 140;   // column width px
@@ -369,48 +369,6 @@ function setDescOpen(open) {
   }
 }
 
-// ─── SCROLL WARP FILTER ──────────────────────────────
-// SVG feDisplacementMap applied to the whole scene — one GPU pass,
-// parabolic Y displacement driven by scroll velocity (like jesperlandberg
-// u_bulgeA vertex shader but as a 2D compositor filter). Mobile only.
-function initWarpFilter() {
-  // Bake parabolic displacement map: 1×256px
-  // R=128 (no X warp), G = 128 + 63·t·|t| where t ∈ [-1,+1] from top to bottom
-  const c = document.createElement('canvas');
-  c.width = 1; c.height = 256;
-  const ctx = c.getContext('2d');
-  const img = ctx.createImageData(1, 256);
-  for (let i = 0; i < 256; i++) {
-    const t = (i / 255) * 2 - 1;                     // -1=top … +1=bottom
-    img.data[i * 4 + 0] = 128;                        // R — no horizontal warp
-    img.data[i * 4 + 1] = Math.round(128 + 63 * t * Math.abs(t)); // G — parabolic
-    img.data[i * 4 + 2] = 128;
-    img.data[i * 4 + 3] = 255;
-  }
-  ctx.putImageData(img, 0, 0);
-
-  const ns  = 'http://www.w3.org/2000/svg';
-  const svg = document.createElementNS(ns, 'svg');
-  svg.style.cssText = 'display:none;position:absolute;width:0;height:0';
-  // x/y/width/height give extra margin so content that scrolls slightly out of
-  // bounds is still captured by the filter and not clipped.
-  svg.innerHTML = `<defs>
-    <filter id="scroll-warp-f" x="-5%" y="-5%" width="110%" height="110%" color-interpolation-filters="sRGB">
-      <feImage result="map" preserveAspectRatio="none" href="${c.toDataURL()}"/>
-      <feDisplacementMap id="warp-disp" in="SourceGraphic" in2="map"
-        scale="0" xChannelSelector="R" yChannelSelector="G"/>
-    </filter>
-  </defs>`;
-  document.body.appendChild(svg);
-  warpDisplace = document.getElementById('warp-disp');
-}
-
-function setWarpFilter(active) {
-  if (!warpDisplace) return;
-  sceneEl.style.filter = active ? 'url(#scroll-warp-f)' : '';
-  if (!active && warpDisplace) warpDisplace.setAttribute('scale', '0');
-}
-
 // ─── TICK ────────────────────────────────────────────
 function tick() {
   const now = performance.now();
@@ -442,9 +400,20 @@ function tick() {
 
     col.style.transform = `translateY(${-rightLY[i]}px)`;
 
-    // On mobile: skip expensive per-thumb 3D cylinder math — compositor handles
-    // the column scroll via translateY above; rotateX/Y/Z are pure GPU overhead.
-    if (currentlyMobile) return;
+    // On mobile: parabolic translateZ only — same formula as jesperlandberg u_bulgeA.
+    // No rotateX/Y (no per-pixel rotation cost), just depth offset per card.
+    // warpDepth is lerped from velocity in the bulge section below.
+    if (currentlyMobile) {
+      const step = thumbH + 12;
+      thumbCaches[i].forEach((thumb, j) => {
+        if (i < COL_MAX - activeN) { thumb.style.transform = ''; return; }
+        const cardCY = COL_TOPS[i] + j * step + thumbH * 0.5 - rightLY[i];
+        const t  = Math.max(-1, Math.min(1, (cardCY - VH * 0.5) / (VH * 0.5)));
+        const tz = warpDepth * (1 - t * t); // parabolic: max at centre, 0 at edges
+        thumb.style.transform = tz > 0.5 ? `translateZ(${tz.toFixed(1)}px)` : '';
+      });
+      return;
+    }
 
     const step     = thumbH + RIGHT_GAP;
     const c        = window.__cylCfg || {};
@@ -530,34 +499,30 @@ function tick() {
     if (crosshairEl) crosshairEl.style.transform = `rotate(${crossAngLY}deg)`;
   }
 
-  // ── Scene bulge — velocity-driven warp of the whole composition ──
+  // ── Velocity-driven scene bulge + mobile warp depth ──
   const c2      = window.__cylCfg || {};
   const avgVel  = (velR[0] + velR[1] + velR[2]) / 3;
+  const kBulge  = lerpK(c2.bulgeSmooth ?? 72, dt);
+
+  // Scene rotateX (desktop) — perspective tilt of the whole composition
   const bulgeCoef   = (c2.bulgeStrength ?? 18) * 1e-6;
   const bulgeTarget = avgVel * Math.abs(avgVel) * bulgeCoef;
-  const kBulge  = lerpK(c2.bulgeSmooth ?? 72, dt);
-  sceneBulge   += (bulgeTarget - sceneBulge) * kBulge;
+  sceneBulge += (bulgeTarget - sceneBulge) * kBulge;
 
-  if (currentlyMobile) {
-    // Mobile: feDisplacementMap pixel warp — one GPU pass, no per-card overhead
-    if (warpDisplace) {
-      const warpStr   = c2.warpStrength ?? 50;
-      const warpScale = avgVel * Math.abs(avgVel) * warpStr * 0.004;
-      warpDisplace.setAttribute('scale', Math.max(-200, Math.min(200, warpScale)).toFixed(1));
-    }
-    // Scene rotateX still gives a subtle tilt even on mobile (no perspective = slight squish)
-    const tiltX = (c2.sceneTiltX ?? 0) + Math.max(-5, Math.min(5, sceneBulge));
-    sceneEl.style.transform = Math.abs(tiltX) > 0.01 ? `rotateX(${tiltX.toFixed(3)}deg)` : '';
-  } else {
-    // Desktop: perspective rotateX on the whole scene container
-    const bulgeDeg = Math.max(-5, Math.min(5, sceneBulge));
-    const tiltX = (c2.sceneTiltX ?? 0) + bulgeDeg;
-    const tiltY =  c2.sceneTiltY ?? 0;
-    const skewX =  c2.sceneSkewX ?? 0;
-    sceneEl.style.transform = (Math.abs(tiltX) > 0.005 || Math.abs(tiltY) > 0.005 || Math.abs(skewX) > 0.005)
-      ? `rotateX(${tiltX.toFixed(3)}deg) rotateY(${tiltY.toFixed(3)}deg) skewX(${skewX.toFixed(3)}deg)`
-      : '';
-  }
+  // Mobile translateZ depth — quadratic in |velocity|, always ≥ 0
+  // Same formula as jesperlandberg: bulge = vel*|vel|*constant
+  const warpCoef   = (c2.warpStrength ?? 50) * 0.0001;
+  const warpTarget = Math.abs(avgVel) * Math.abs(avgVel) * warpCoef;
+  warpDepth += (warpTarget - warpDepth) * kBulge;
+
+  // Apply scene transform (both mobile and desktop)
+  const bulgeDeg = Math.max(-5, Math.min(5, sceneBulge));
+  const tiltX = (c2.sceneTiltX ?? 0) + (currentlyMobile ? 0 : bulgeDeg);
+  const tiltY =  c2.sceneTiltY ?? 0;
+  const skewX =  c2.sceneSkewX ?? 0;
+  sceneEl.style.transform = (Math.abs(tiltX) > 0.005 || Math.abs(tiltY) > 0.005 || Math.abs(skewX) > 0.005)
+    ? `rotateX(${tiltX.toFixed(3)}deg) rotateY(${tiltY.toFixed(3)}deg) skewX(${skewX.toFixed(3)}deg)`
+    : '';
 }
 
 // ─── WHEEL ───────────────────────────────────────────
@@ -640,9 +605,6 @@ async function init() {
     });
   }
 
-  initWarpFilter();
-  setWarpFilter(MOBILE);
-
   requestAnimationFrame(() => requestAnimationFrame(() => {
     measure();
     if (!MOBILE) applyN(calcN(window.innerWidth), false);
@@ -671,7 +633,6 @@ async function init() {
         cols.forEach(col => { col.style.opacity = ''; col.style.pointerEvents = ''; });
         // Clear any 3D cylinder transforms left over from desktop
         if (crossed) thumbCaches.forEach(col => col.forEach(t => { t.style.transform = ''; }));
-        if (crossed) setWarpFilter(true);
         activeN = COL_MAX; pendingN = null; pendingVW = null;
         // If just crossed from desktop: push leftClip off-screen
         if (crossed && !mobileCaseOpen) gsap.set(leftClip, { x: '100%' });
@@ -680,7 +641,6 @@ async function init() {
 
       // ── Just entered desktop from mobile ─────────────
       if (crossed) {
-        setWarpFilter(false);
         mobileCaseOpen = false;
         leftClip.classList.remove('mobile-open');
         if (descWrap) descWrap.classList.remove('mobile-desc-on');

@@ -381,18 +381,13 @@ img.portfolio-left-img,
   .portfolio-thumbs.col-2 { left: 4px;                                right: auto; top: calc(38px - 9px);  }
   .portfolio-thumbs.col-3 { left: calc((100vw - 12px) / 2 + 8px);    right: auto; top: calc(38px + 10px); }
 
-  /* No 3D cylinder on mobile — flatten compositing context to free GPU layers */
+  /* Mobile 3D: keep perspective for translateZ depth, drop rotateX/Y cylinder */
   #col-3d-scene {
-    perspective: none !important;
+    perspective: 900px !important;
     perspective-origin: 50% 50% !important;
   }
 
-  .portfolio-thumbs {
-    transform-style: flat;
-  }
-
   .portfolio-thumb {
-    will-change: auto;
     border-radius: 4px;
   }
 
