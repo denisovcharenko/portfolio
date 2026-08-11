@@ -425,8 +425,9 @@ img.portfolio-left-img,
     border-radius: 10px;
   }
 
-  /* Hide crosshair on mobile */
-  .portfolio-crosshair { display: none; }
+  /* Crosshair visible on mobile, behind the columns */
+  .portfolio-crosshair { z-index: 1; }
+  #col-3d-scene { z-index: 2; }
 
   /* Description — hidden until a case is open, then fixed at bottom */
   .portfolio-desc-wrap {

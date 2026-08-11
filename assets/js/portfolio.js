@@ -508,8 +508,13 @@ function tick() {
 
     leftPanel.style.transform = `translateY(${-leftLY}px)`;
 
+  }
+
+  // ── Crosshair spin — both desktop and mobile ─────
+  {
     const rightAvg = (velR[0] + velR[1] + velR[2]) / 3;
-    crossAngle += (leftVel - rightAvg) * lc('crossSpeed', 0.4);
+    const spinInput = currentlyMobile ? -rightAvg : (leftVel - rightAvg);
+    crossAngle += spinInput * lc('crossSpeed', 0.4);
     const kCross = lerpK(lc('crossSmooth', 82), dt);
     crossAngLY += (crossAngle - crossAngLY) * kCross;
     if (crosshairEl) crosshairEl.style.transform = `rotate(${crossAngLY}deg)`;
