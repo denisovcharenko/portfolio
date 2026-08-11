@@ -400,17 +400,20 @@ function tick() {
 
     col.style.transform = `translateY(${-rightLY[i]}px)`;
 
-    // On mobile: parabolic translateZ only — same formula as jesperlandberg u_bulgeA.
-    // No rotateX/Y (no per-pixel rotation cost), just depth offset per card.
-    // warpDepth is lerped from velocity in the bulge section below.
+    // Mobile cylinder — simplified formula (no trig/exp), same visual as desktop.
+    // Linear rotateX + parabolic translateZ: fast enough on A-series GPU at 60fps.
     if (currentlyMobile) {
+      const c    = window.__cylCfg || {};
       const step = thumbH + 12;
+      const maxR = (c.maxDeg ?? 9);
       thumbCaches[i].forEach((thumb, j) => {
         if (i < COL_MAX - activeN) { thumb.style.transform = ''; return; }
         const cardCY = COL_TOPS[i] + j * step + thumbH * 0.5 - rightLY[i];
-        const t  = Math.max(-1, Math.min(1, (cardCY - VH * 0.5) / (VH * 0.5)));
-        const tz = warpDepth * (1 - t * t); // parabolic: max at centre, 0 at edges
-        thumb.style.transform = tz > 0.5 ? `translateZ(${tz.toFixed(1)}px)` : '';
+        const t  = (cardCY - VH * 0.5) / (VH * 0.5); // -1…+1 from centre
+        const tc = Math.max(-1, Math.min(1, t));
+        const rotX = -(tc * maxR).toFixed(2);          // linear tilt — no cos/sin
+        const tz   = (warpDepth * (1 - tc * tc)).toFixed(1); // parabolic depth
+        thumb.style.transform = `rotateX(${rotX}deg) translateZ(${tz}px)`;
       });
       return;
     }
@@ -509,10 +512,11 @@ function tick() {
   const bulgeTarget = avgVel * Math.abs(avgVel) * bulgeCoef;
   sceneBulge += (bulgeTarget - sceneBulge) * kBulge;
 
-  // Mobile translateZ depth — quadratic in |velocity|, always ≥ 0
-  // Same formula as jesperlandberg: bulge = vel*|vel|*constant
-  const warpCoef   = (c2.warpStrength ?? 50) * 0.0001;
-  const warpTarget = Math.abs(avgVel) * Math.abs(avgVel) * warpCoef;
+  // Mobile warp depth — base cylinder depth always present, amplified by velocity
+  const warpStr    = (c2.warpStrength ?? 50);
+  const baseDepth  = warpStr * 1.2;             // always-on depth (px) — creates the static curve
+  const velBoost   = Math.abs(avgVel) * Math.abs(avgVel) * warpStr * 0.00015; // velocity bonus
+  const warpTarget = baseDepth + velBoost;
   warpDepth += (warpTarget - warpDepth) * kBulge;
 
   // Apply scene transform (both mobile and desktop)
