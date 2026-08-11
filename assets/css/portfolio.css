@@ -373,9 +373,6 @@ img.portfolio-left-img,
     padding: 7px 8px;
     gap: 3px;
     z-index: 50;
-    background: rgba(33, 33, 33, 0.96);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
   }
 
   /* Make nav buttons slightly smaller on mobile */
@@ -496,7 +493,7 @@ img.portfolio-left-img,
   .portfolio-left {
     transform: none !important;
     width: 100%;
-    padding-top: 48px;
+    padding-top: 20px;
     padding-bottom: 40px;
     overflow: visible;
   }
@@ -511,18 +508,9 @@ img.portfolio-left-img,
     height: auto;
   }
 
-  /* Mobile case bar — sticky header inside the scrollable clip */
+  /* Mobile case bar — hidden, existing nav stays as header */
   .mobile-case-bar {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 10px 14px;
-    position: sticky;
-    top: 0;
-    z-index: 5;
-    background: #212121;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-    height: 48px;
+    display: none;
   }
 
   .mobile-close-btn.visible {
