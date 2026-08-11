@@ -395,13 +395,13 @@ img.portfolio-left-img,
   /* col-1 (leftmost desktop column) is hidden on mobile */
   .portfolio-thumbs.col-1 { display: none; }
 
-  /* 4px outer margins, 4px gutter: width = (100vw - 12px) / 2 */
+  /* 4px outer margins, 12px gutter (same as vertical gap): width = (100vw - 20px) / 2 */
   .portfolio-thumbs {
-    width: calc((100vw - 12px) / 2);
+    width: calc((100vw - 20px) / 2);
     gap: 12px;
   }
-  .portfolio-thumbs.col-2 { left: 4px;                                right: auto; top: calc(38px - 9px);  }
-  .portfolio-thumbs.col-3 { left: calc((100vw - 12px) / 2 + 8px);    right: auto; top: calc(38px + 10px); }
+  .portfolio-thumbs.col-2 { left: 4px;                                 right: auto; top: calc(38px - 9px);  }
+  .portfolio-thumbs.col-3 { left: calc((100vw - 20px) / 2 + 16px);    right: auto; top: calc(38px + 10px); }
 
   /* Mobile 3D: keep perspective for translateZ depth, drop rotateX/Y cylinder */
   #col-3d-scene {
@@ -410,7 +410,7 @@ img.portfolio-left-img,
   }
 
   .portfolio-thumb {
-    border-radius: 4px;
+    border-radius: 0;
   }
 
   /* Shrink effect on mobile — same feel as desktop */

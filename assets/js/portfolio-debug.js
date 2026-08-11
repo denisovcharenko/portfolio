@@ -131,6 +131,40 @@ window.__cylCfg = {
         bulgeStrength: 62, bulgeSmooth: 32, warpStrength: 0, warpBase: 0,
       },
     },
+    {
+      name: 'Rush',
+      values: {
+        ...DEFAULTS,
+        cylR: 1900, zMult: 10, maxDeg: 18, maxDegMobile: 10,
+        flatZone: 50, fadeZone: 250,
+        persp: 1100, origX: 85, origY: 92,
+        sensitivity: 0.22, friction: 0.88, smoothR: 2,
+        bulgeStrength: 52, bulgeSmooth: 24, warpStrength: 0, warpBase: 0,
+      },
+    },
+    {
+      name: 'Glow',
+      values: {
+        ...DEFAULTS,
+        cylR: 5000, zMult: 4, maxDeg: 8, maxDegMobile: 6,
+        flatZone: 180, fadeZone: 600,
+        persp: 2200, origX: 85, origY: 92,
+        sensitivity: 0.065, friction: 0.968, smoothR: 55,
+        bulgeStrength: 18, bulgeSmooth: 74, warpStrength: 310, warpBase: 0.28, maxDegMobile: 6,
+      },
+    },
+    {
+      name: 'Spin',
+      values: {
+        ...DEFAULTS,
+        cylR: 1800, zMult: 9, maxDeg: 20, maxDegMobile: 10,
+        flatZone: 20, fadeZone: 300,
+        cylAxis: 0.5,
+        persp: 1400, origX: 85, origY: 92,
+        sensitivity: 0.10, friction: 0.94, smoothR: 5,
+        bulgeStrength: 36, bulgeSmooth: 50, warpStrength: 0, warpBase: 0,
+      },
+    },
   ];
 
   // ── Sections ──────────────────────────────────────────
@@ -223,9 +257,15 @@ window.__cylCfg = {
 
   // ── User presets (localStorage) ───────────────────────
   const STORAGE_KEY = 'portfolio-debug-presets';
-  function getUserPresets() { try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'); } catch { return []; } }
+  const HIDDEN_KEY  = 'portfolio-debug-hidden';
+  function getUserPresets()   { try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'); } catch { return []; } }
   function saveUserPresets(p) { localStorage.setItem(STORAGE_KEY, JSON.stringify(p)); }
-  function getAllPresets()    { return [...BUILT_IN, ...getUserPresets()]; }
+  function getHidden()        { try { return JSON.parse(localStorage.getItem(HIDDEN_KEY) || '[]'); } catch { return []; } }
+  function setHidden(list)    { localStorage.setItem(HIDDEN_KEY, JSON.stringify(list)); }
+  function getAllPresets()     {
+    const hidden = getHidden();
+    return [...BUILT_IN.filter(p => !hidden.includes(p.name)), ...getUserPresets()];
+  }
 
   // ── Build panel DOM ───────────────────────────────────
   const panel = document.createElement('div');
@@ -249,6 +289,7 @@ window.__cylCfg = {
     </div>
     <div id="dbg-action-row">
       <button id="dbg-copy-btn">⊞ Copy</button>
+      <button id="dbg-export-btn">↑ Export</button>
       <button id="dbg-reset-btn">↺ Reset</button>
     </div>
     <div class="dbg-div"></div>
@@ -679,17 +720,14 @@ window.__cylCfg = {
       if (p.name === activeName) opt.selected = true;
       sel.appendChild(opt);
     }
-    const isUser = getUserPresets().some(p => p.name === sel.value);
-    document.getElementById('dbg-del-btn').style.display = isUser ? '' : 'none';
   }
-  rebuildSelect('Default');
+  rebuildSelect('Warp Dynamic');
+  applyPreset(getAllPresets().find(p => p.name === 'Warp Dynamic')?.values || DEFAULTS);
 
   document.getElementById('dbg-sel').addEventListener('change', function () {
     const preset = getAllPresets().find(p => p.name === this.value);
     if (!preset) return;
     applyPreset(preset.values);
-    const isUser = getUserPresets().some(p => p.name === this.value);
-    document.getElementById('dbg-del-btn').style.display = isUser ? '' : 'none';
   });
 
   document.getElementById('dbg-save-btn').addEventListener('click', () => {
@@ -707,11 +745,20 @@ window.__cylCfg = {
   document.getElementById('dbg-del-btn').addEventListener('click', () => {
     const sel  = document.getElementById('dbg-sel');
     const name = sel.value;
-    if (BUILT_IN.some(p => p.name === name)) return;
-    const list = getUserPresets().filter(p => p.name !== name);
-    saveUserPresets(list);
-    rebuildSelect('Default');
-    applyPreset(getAllPresets().find(p => p.name === 'Default').values);
+    if (BUILT_IN.some(p => p.name === name)) {
+      const hidden = getHidden();
+      if (!hidden.includes(name)) { hidden.push(name); setHidden(hidden); }
+    } else {
+      saveUserPresets(getUserPresets().filter(p => p.name !== name));
+    }
+    const remaining = getAllPresets();
+    const fallback  = remaining[0]?.name;
+    if (fallback) {
+      rebuildSelect(fallback);
+      applyPreset(getAllPresets().find(p => p.name === fallback).values);
+    } else {
+      sel.innerHTML = '';
+    }
   });
 
   // ── Copy ──────────────────────────────────────────────
@@ -726,11 +773,44 @@ window.__cylCfg = {
 
   // ── Reset ─────────────────────────────────────────────
   document.getElementById('dbg-reset-btn').addEventListener('click', () => {
+    localStorage.removeItem(HIDDEN_KEY);
     applyPreset(DEFAULTS);
     cfg.curvePoints = DEFAULT_CURVE_PTS.map(p => [...p]);
     rebuildSelect('Default');
     document.getElementById('dbg-sel').value = 'Default';
     syncSliders();
+  });
+
+  // ── Export presets ────────────────────────────────────
+  document.getElementById('dbg-export-btn').addEventListener('click', () => {
+    const json = JSON.stringify(getAllPresets(), null, 2);
+    let modal = document.getElementById('dbg-export-modal');
+    if (!modal) {
+      modal = document.createElement('div');
+      modal.id = 'dbg-export-modal';
+      modal.innerHTML = `
+        <div id="dbg-export-inner">
+          <div id="dbg-export-hdr">
+            <span>Presets JSON — paste to Claude</span>
+            <button id="dbg-export-copy">Copy all</button>
+            <button id="dbg-export-close">✕</button>
+          </div>
+          <textarea id="dbg-export-ta" readonly spellcheck="false"></textarea>
+        </div>
+      `;
+      document.body.appendChild(modal);
+      modal.addEventListener('click', e => { if (e.target === modal) modal.style.display = 'none'; });
+      document.getElementById('dbg-export-close').addEventListener('click', () => { modal.style.display = 'none'; });
+      document.getElementById('dbg-export-copy').addEventListener('click', () => {
+        const ta = document.getElementById('dbg-export-ta');
+        navigator.clipboard.writeText(ta.value).catch(() => { ta.select(); document.execCommand('copy'); });
+        const b = document.getElementById('dbg-export-copy');
+        b.textContent = '✓ Copied!';
+        setTimeout(() => { b.textContent = 'Copy all'; }, 1500);
+      });
+    }
+    document.getElementById('dbg-export-ta').value = json;
+    modal.style.display = 'flex';
   });
 
   // ── Toggle open/close ─────────────────────────────────
@@ -827,20 +907,48 @@ window.__cylCfg = {
     }
     #dbg-save-btn:hover { background: rgba(255,255,255,0.14); color: #fff; }
     #dbg-del-btn:hover  { background: rgba(255,80,80,0.15);   color: #f88; }
-    #dbg-del-btn { display: none; }
 
     #dbg-action-row {
       display: flex; gap: 5px; margin-bottom: 10px;
     }
-    #dbg-copy-btn, #dbg-reset-btn {
+    #dbg-copy-btn, #dbg-export-btn, #dbg-reset-btn {
       flex: 1; background: rgba(255,255,255,0.05);
       border: 1px solid rgba(255,255,255,0.08); border-radius: 6px;
       color: #777; font-family: inherit; font-size: 10px; font-weight: 600;
       letter-spacing: 0.3px; padding: 6px 0; cursor: pointer;
       transition: background 0.15s, color 0.15s;
     }
-    #dbg-copy-btn:hover, #dbg-reset-btn:hover {
+    #dbg-copy-btn:hover, #dbg-export-btn:hover, #dbg-reset-btn:hover {
       background: rgba(255,255,255,0.1); color: #fff;
+    }
+
+    #dbg-export-modal {
+      display: none; position: fixed; inset: 0; z-index: 100001;
+      background: rgba(0,0,0,0.75); align-items: center; justify-content: center;
+    }
+    #dbg-export-inner {
+      background: #111; border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 14px; padding: 14px; width: min(78vw, 560px);
+      max-height: 72vh; display: flex; flex-direction: column; gap: 10px;
+    }
+    #dbg-export-hdr {
+      display: flex; align-items: center; gap: 8px;
+      font-family: 'Inter', sans-serif; font-size: 11px; color: #aaa;
+    }
+    #dbg-export-hdr span { flex: 1; font-weight: 600; color: #ccc; }
+    #dbg-export-copy, #dbg-export-close {
+      background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 6px; color: #ccc; font-family: inherit; font-size: 10px;
+      font-weight: 600; padding: 4px 10px; cursor: pointer;
+    }
+    #dbg-export-close { padding: 4px 8px; }
+    #dbg-export-copy:hover { background: rgba(255,255,255,0.16); }
+    #dbg-export-close:hover { color: #f88; }
+    #dbg-export-ta {
+      flex: 1; min-height: 240px; background: #0a0a0a;
+      color: #7a9; border: 1px solid rgba(255,255,255,0.08); border-radius: 8px;
+      padding: 10px 12px; font-size: 10px; font-family: 'Menlo', monospace;
+      resize: none; outline: none; line-height: 1.5;
     }
 
     .dbg-div {
