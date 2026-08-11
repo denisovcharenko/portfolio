@@ -405,10 +405,8 @@ function tick() {
     const bowlStr  = c.bowlStrength ?? 0;
     const pitCY    = VH * (c.pitCenterY ?? 0.75);
     const pitSigma = c.pitRadius    ?? 200;
-    const pitDepth   = c.pitDepth     ?? 0;
-    const curveSharp = c.curveSharp   ?? 1.0;
-    const curveBias  = c.curveBias    ?? 0;
-    const VW         = window.innerWidth;
+    const pitDepth = c.pitDepth ?? 0;
+    const VW       = window.innerWidth;
     const dx       = colCenterX[i] - VW * 0.5;
     const radH     = (dx / liveCYL) * bowlStr;
 
@@ -426,8 +424,11 @@ function tick() {
         t = p * p * (3 - 2 * p);
       }
 
-      if (t > 0 && Math.abs(curveSharp - 1.0) > 0.001) t = Math.pow(t, 1.0 / curveSharp);
-      if (t > 0 && Math.abs(curveBias) > 0.001) t = Math.max(0, Math.min(1, t + curveBias * t * (1 - t)));
+      if (t > 0 && c.curveLUT) {
+        const lut = c.curveLUT;
+        const idx = Math.max(0, Math.min(lut.length - 1, Math.round(t * (lut.length - 1))));
+        t = lut[idx];
+      }
 
       const rawRad = (dy / liveCYL) * t;
       const rad    = Math.sign(rawRad) * Math.min(Math.abs(rawRad), maxRad);

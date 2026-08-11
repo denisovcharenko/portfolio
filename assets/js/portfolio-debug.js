@@ -13,11 +13,12 @@
     speed0: 1.00, speed1: 0.85, speed2: 0.70,
     sceneTiltX: 0, sceneTiltY: 0, sceneSkewX: 0, cylAxis: 0, bowlStrength: 0,
     pitCenterY: 0.75, pitRadius: 200, pitDepth: 0,
-    curveSharp: 1.0, curveBias: 0,
   };
+  const DEFAULT_CURVE_PTS = [[0, 0], [0.5, 0.5], [1, 1]];
 
   window.__cylCfg = Object.assign({}, DEFAULTS);
   const cfg = window.__cylCfg;
+  cfg.curvePoints = DEFAULT_CURVE_PTS.map(p => [...p]);
 
   // ── Built-in presets ──────────────────────────────────
   const BUILT_IN = [
@@ -89,11 +90,11 @@
     {
       title: 'SHAPE',
       rows: [
-        { id: 'sceneTiltX',   label: 'Tilt X',      tip: 'Нахил всієї 3D-сцени вперед або назад (по осі X). 0 = нейтральне положення.', min: -40, max: 40, step: 0.5, fmt: v => v.toFixed(1), unit: '°' },
-        { id: 'sceneTiltY',   label: 'Tilt Y',       tip: 'Нахил сцени вліво або вправо (по осі Y). 0 = нейтральне положення.', min: -40, max: 40, step: 0.5, fmt: v => v.toFixed(1), unit: '°' },
-        { id: 'sceneSkewX',   label: 'Skew X',       tip: 'Горизонтальний скіс всієї сцени. Надає відчуття динаміки, руху або нестабільності.', min: -30, max: 30, step: 0.5, fmt: v => v.toFixed(1), unit: '°' },
-        { id: 'cylAxis',      label: 'Cylinder Axis', tip: 'Вісь циліндра. 0 = вертикальний (↕ — колонки вигинаються зліва-направо), 1 = горизонтальний (↔). Можна змішувати.', min: 0, max: 1, step: 0.05, fmt: v => v.toFixed(2), unit: '' },
-        { id: 'bowlStrength', label: 'Bowl Depth',   tip: 'Глибина ефекту "чаші" — крайні колонки додатково вигинаються у глибину. 0 = вимкнено.', min: 0, max: 3, step: 0.05, fmt: v => v.toFixed(2), unit: '×' },
+        { id: 'sceneTiltX',   label: 'Tilt X',        tip: 'Нахил всієї 3D-сцени вперед або назад (по осі X). 0 = нейтральне положення.', min: -40, max: 40, step: 0.5, fmt: v => v.toFixed(1), unit: '°' },
+        { id: 'sceneTiltY',   label: 'Tilt Y',         tip: 'Нахил сцени вліво або вправо (по осі Y). 0 = нейтральне положення.', min: -40, max: 40, step: 0.5, fmt: v => v.toFixed(1), unit: '°' },
+        { id: 'sceneSkewX',   label: 'Skew X',         tip: 'Горизонтальний скіс всієї сцени. Надає відчуття динаміки, руху або нестабільності.', min: -30, max: 30, step: 0.5, fmt: v => v.toFixed(1), unit: '°' },
+        { id: 'cylAxis',      label: 'Cylinder Axis',  tip: 'Вісь циліндра. 0 = вертикальний (↕ — колонки вигинаються зліва-направо), 1 = горизонтальний (↔). Можна змішувати.', min: 0, max: 1, step: 0.05, fmt: v => v.toFixed(2), unit: '' },
+        { id: 'bowlStrength', label: 'Bowl Depth',     tip: 'Глибина ефекту "чаші" — крайні колонки додатково вигинаються у глибину. 0 = вимкнено.', min: 0, max: 3, step: 0.05, fmt: v => v.toFixed(2), unit: '×' },
       ],
     },
     {
@@ -106,10 +107,7 @@
     },
     {
       title: 'CURVE',
-      rows: [
-        { id: 'curveSharp', label: 'Sharpness', tip: 'Крутість кривої розгортки ефекту. 1.0 = лінійно. > 1 = плавний старт і різкий фінал (ефект концентрується на краях). < 1 = різкий старт і плавне загасання (ефект сильніший поряд з центром).', min: 0.2, max: 3.0, step: 0.05, fmt: v => v.toFixed(2), unit: '' },
-        { id: 'curveBias',  label: 'Travel',    tip: 'Зсув кривої вгору або вниз. 0 = симетрично. + = ефект відчутніший ближче до 1. − = ефект різко набирає силу вже від початку зони.', min: -0.95, max: 0.95, step: 0.05, fmt: v => v.toFixed(2), unit: '', graph: 'curve' },
-      ],
+      rows: [{ type: 'curve-editor' }],
     },
   ];
 
@@ -175,11 +173,27 @@
     });
 
     for (const r of sec.rows) {
-      const val  = cfg[r.id];
-      const disp = r.fmt ? r.fmt(val) : val;
-
       const row = document.createElement('div');
       row.className = 'dbg-row';
+
+      if (r.type === 'curve-editor') {
+        row.innerHTML = `
+          <canvas id="dbg-curve-shape" width="248" height="120" class="dbg-curve-canvas"></canvas>
+          <div class="dbg-pts-row">
+            <span class="dbg-lbl">Точки</span>
+            <div class="dbg-pts-ctrl">
+              <button class="dbg-pts-btn" id="dbg-pts-minus">−</button>
+              <span id="dbg-pts-count">${cfg.curvePoints.length}</span>
+              <button class="dbg-pts-btn" id="dbg-pts-plus">+</button>
+            </div>
+          </div>
+        `;
+        body.appendChild(row);
+        continue;
+      }
+
+      const val  = cfg[r.id];
+      const disp = r.fmt ? r.fmt(val) : val;
       row.innerHTML = `
         <div class="dbg-row-top">
           <span class="dbg-lbl" data-tip="${r.tip}">${r.label}</span>
@@ -187,7 +201,7 @@
         </div>
         <input type="range" class="dbg-slider" id="s-${r.id}"
           min="${r.min}" max="${r.max}" step="${r.step}" value="${val}">
-        ${r.graph === 'friction' ? '<canvas id="dbg-curve" width="240" height="36" class="dbg-graph"></canvas>' : r.graph === 'curve' ? '<canvas id="dbg-curve-shape" width="240" height="80" class="dbg-graph"></canvas>' : ''}
+        ${r.graph === 'friction' ? '<canvas id="dbg-curve" width="240" height="36" class="dbg-graph"></canvas>' : ''}
       `;
       body.appendChild(row);
     }
@@ -226,76 +240,295 @@
       v *= cfg.friction;
     }
     ctx.stroke();
-    // zero line
     ctx.strokeStyle = 'rgba(255,255,255,0.08)';
     ctx.lineWidth = 1;
     ctx.beginPath(); ctx.moveTo(0, H - 4); ctx.lineTo(W, H - 4); ctx.stroke();
   }
 
-  // ── Curve shape preview ───────────────────────────
-  function drawCurve() {
+  // ── Curve math: Catmull-Rom through control points ────
+  function curveTangent(pts, i) {
+    const n = pts.length;
+    if (n === 1) return 0;
+    if (i === 0)     return (pts[1][1] - pts[0][1]) / Math.max(1e-6, pts[1][0] - pts[0][0]);
+    if (i === n - 1) return (pts[n-1][1] - pts[n-2][1]) / Math.max(1e-6, pts[n-1][0] - pts[n-2][0]);
+    return (pts[i+1][1] - pts[i-1][1]) / Math.max(1e-6, pts[i+1][0] - pts[i-1][0]);
+  }
+
+  function evalCurve(pts, x) {
+    const n = pts.length;
+    if (n === 0) return x;
+    if (n === 1) return pts[0][1];
+    if (x <= pts[0][0]) return pts[0][1];
+    if (x >= pts[n-1][0]) return pts[n-1][1];
+
+    let i = 0;
+    while (i < n - 2 && pts[i+1][0] <= x) i++;
+
+    const [x0, y0] = pts[i];
+    const [x1, y1] = pts[i + 1];
+    const h = x1 - x0;
+    if (h < 1e-9) return y0;
+    const s = (x - x0) / h;
+    const s2 = s * s, s3 = s2 * s;
+
+    const m0 = curveTangent(pts, i)     * h;
+    const m1 = curveTangent(pts, i + 1) * h;
+
+    return (2*s3 - 3*s2 + 1)*y0 + (s3 - 2*s2 + s)*m0 + (-2*s3 + 3*s2)*y1 + (s3 - s2)*m1;
+  }
+
+  function buildCurveLUT() {
+    const pts = cfg.curvePoints;
+    const N = 256;
+    const lut = new Float32Array(N);
+    for (let i = 0; i < N; i++) lut[i] = evalCurve(pts, i / (N - 1));
+    cfg.curveLUT = lut;
+  }
+
+  // ── Interactive curve canvas ──────────────────────────
+  const CRV_PAD = 10;
+  let curveDragIdx = -1;
+  let curveHoverIdx = -1;
+
+  function curvePtToCanvas(nx, ny, W, H) {
+    return [CRV_PAD + nx * (W - CRV_PAD * 2), H - CRV_PAD - ny * (H - CRV_PAD * 2)];
+  }
+  function curveCanvasToPt(px, py, W, H) {
+    return [(px - CRV_PAD) / (W - CRV_PAD * 2), (H - CRV_PAD - py) / (H - CRV_PAD * 2)];
+  }
+
+  function drawCurveEditor() {
     const canvas = document.getElementById('dbg-curve-shape');
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
     const W = canvas.width, H = canvas.height;
+    const iW = W - CRV_PAD * 2, iH = H - CRV_PAD * 2;
     ctx.clearRect(0, 0, W, H);
 
-    const pad = 8;
-    const iW = W - pad * 2, iH = H - pad * 2;
-
+    // Background
     ctx.fillStyle = 'rgba(255,255,255,0.04)';
     ctx.fillRect(0, 0, W, H);
 
-    // axis lines
-    ctx.strokeStyle = 'rgba(255,255,255,0.08)';
+    // Grid lines
+    ctx.strokeStyle = 'rgba(255,255,255,0.06)';
     ctx.lineWidth = 1;
-    ctx.beginPath(); ctx.moveTo(pad, H - pad); ctx.lineTo(W - pad, H - pad); ctx.stroke();
-    ctx.beginPath(); ctx.moveTo(pad, pad);      ctx.lineTo(pad, H - pad);     ctx.stroke();
+    for (let i = 1; i < 4; i++) {
+      const gx = CRV_PAD + (i / 4) * iW;
+      const gy = CRV_PAD + (i / 4) * iH;
+      ctx.beginPath(); ctx.moveTo(gx, CRV_PAD); ctx.lineTo(gx, H - CRV_PAD); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(CRV_PAD, gy); ctx.lineTo(W - CRV_PAD, gy); ctx.stroke();
+    }
 
-    // linear reference diagonal
-    ctx.strokeStyle = 'rgba(255,255,255,0.12)';
-    ctx.lineWidth = 1;
-    ctx.setLineDash([3, 4]);
-    ctx.beginPath(); ctx.moveTo(pad, H - pad); ctx.lineTo(W - pad, pad); ctx.stroke();
+    // Axes
+    ctx.strokeStyle = 'rgba(255,255,255,0.1)';
+    ctx.beginPath(); ctx.moveTo(CRV_PAD, CRV_PAD); ctx.lineTo(CRV_PAD, H - CRV_PAD); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(CRV_PAD, H - CRV_PAD); ctx.lineTo(W - CRV_PAD, H - CRV_PAD); ctx.stroke();
+
+    // Linear reference (dashed)
+    ctx.strokeStyle = 'rgba(255,255,255,0.1)';
+    ctx.setLineDash([3, 5]);
+    ctx.beginPath(); ctx.moveTo(CRV_PAD, H - CRV_PAD); ctx.lineTo(W - CRV_PAD, CRV_PAD); ctx.stroke();
     ctx.setLineDash([]);
 
-    // actual curve
-    const sharp = cfg.curveSharp ?? 1.0;
-    const bias  = cfg.curveBias  ?? 0;
+    // Curve fill (area under)
+    const pts = cfg.curvePoints;
+    ctx.beginPath();
+    ctx.moveTo(CRV_PAD, H - CRV_PAD);
+    for (let px = 0; px <= iW; px++) {
+      const nx = px / iW;
+      const ny = evalCurve(pts, nx);
+      ctx.lineTo(CRV_PAD + px, H - CRV_PAD - ny * iH);
+    }
+    ctx.lineTo(W - CRV_PAD, H - CRV_PAD);
+    ctx.closePath();
+    ctx.fillStyle = 'rgba(74, 158, 255, 0.06)';
+    ctx.fill();
 
+    // Curve line
     ctx.strokeStyle = '#4a9eff';
     ctx.lineWidth = 1.5;
     ctx.beginPath();
     for (let px = 0; px <= iW; px++) {
-      let t = px / iW;
-      if (Math.abs(sharp - 1.0) > 0.001) t = Math.pow(t, 1.0 / sharp);
-      if (Math.abs(bias) > 0.001) t = Math.max(0, Math.min(1, t + bias * t * (1 - t)));
-      const x = pad + px;
-      const y = H - pad - t * iH;
-      px === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+      const nx = px / iW;
+      const ny = evalCurve(pts, nx);
+      const cx = CRV_PAD + px;
+      const cy = H - CRV_PAD - ny * iH;
+      px === 0 ? ctx.moveTo(cx, cy) : ctx.lineTo(cx, cy);
     }
     ctx.stroke();
 
-    // dot at current sharpness/bias point (t=0.5 → mapped)
-    let tMid = 0.5;
-    if (Math.abs(sharp - 1.0) > 0.001) tMid = Math.pow(0.5, 1.0 / sharp);
-    if (Math.abs(bias) > 0.001) tMid = Math.max(0, Math.min(1, tMid + bias * tMid * (1 - tMid)));
-    ctx.fillStyle = '#4a9eff';
-    ctx.beginPath();
-    ctx.arc(pad + iW * 0.5, H - pad - tMid * iH, 3, 0, Math.PI * 2);
-    ctx.fill();
+    // Control points
+    pts.forEach(([nx, ny], i) => {
+      const [cx, cy] = curvePtToCanvas(nx, ny, W, H);
+      const active = curveDragIdx === i || curveHoverIdx === i;
 
-    // axis labels
-    ctx.fillStyle = 'rgba(255,255,255,0.2)';
+      // Connection line to curve
+      ctx.strokeStyle = 'rgba(255,255,255,0.12)';
+      ctx.lineWidth = 1;
+      const curveY = H - CRV_PAD - evalCurve(pts, nx) * iH;
+      if (Math.abs(cy - curveY) > 3) {
+        ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(cx, curveY); ctx.stroke();
+      }
+
+      // Outer ring
+      ctx.beginPath();
+      ctx.arc(cx, cy, active ? 7 : 5, 0, Math.PI * 2);
+      ctx.strokeStyle = active ? 'rgba(255,255,255,0.7)' : 'rgba(255,255,255,0.3)';
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+
+      // Fill
+      ctx.beginPath();
+      ctx.arc(cx, cy, active ? 5 : 3.5, 0, Math.PI * 2);
+      ctx.fillStyle = active ? '#ffffff' : '#4a9eff';
+      ctx.fill();
+    });
+
+    // Axis labels
+    ctx.fillStyle = 'rgba(255,255,255,0.18)';
     ctx.font = '8px Inter, sans-serif';
-    ctx.fillText('in', pad + 1, H - 1);
-    ctx.fillText('out', 1, pad + 7);
+    ctx.fillText('in', CRV_PAD + 2, H - 1);
+    ctx.fillText('out', 1, CRV_PAD + 7);
   }
+
+  // ── Drag & touch interaction ──────────────────────────
+  function getCurveCanvasXY(canvas, e) {
+    const r = canvas.getBoundingClientRect();
+    const scaleX = canvas.width  / r.width;
+    const scaleY = canvas.height / r.height;
+    return [(e.clientX - r.left) * scaleX, (e.clientY - r.top) * scaleY];
+  }
+
+  function findNearestPt(canvas, mx, my) {
+    const W = canvas.width, H = canvas.height;
+    let closest = -1, minD = 14;
+    cfg.curvePoints.forEach(([nx, ny], i) => {
+      const [cx, cy] = curvePtToCanvas(nx, ny, W, H);
+      const d = Math.sqrt((mx - cx) ** 2 + (my - cy) ** 2);
+      if (d < minD) { minD = d; closest = i; }
+    });
+    return closest;
+  }
+
+  function moveDragPt(canvas, mx, my) {
+    const W = canvas.width, H = canvas.height;
+    const pts = cfg.curvePoints;
+    const [nx, ny] = curveCanvasToPt(mx, my, W, H);
+
+    // X: first and last are pinned
+    let newX = nx;
+    if (curveDragIdx === 0) {
+      newX = 0;
+    } else if (curveDragIdx === pts.length - 1) {
+      newX = 1;
+    } else {
+      const minX = pts[curveDragIdx - 1][0] + 0.02;
+      const maxX = pts[curveDragIdx + 1][0] - 0.02;
+      newX = Math.max(minX, Math.min(maxX, nx));
+    }
+
+    // Y can go slightly out of [0,1] for overshoot
+    const newY = Math.max(-0.4, Math.min(1.4, ny));
+    pts[curveDragIdx] = [newX, newY];
+
+    buildCurveLUT();
+    drawCurveEditor();
+  }
+
+  // Wire up after DOM is ready (canvas exists now)
+  setTimeout(() => {
+    const canvas = document.getElementById('dbg-curve-shape');
+    if (!canvas) return;
+
+    canvas.style.cursor = 'crosshair';
+
+    // Mouse
+    canvas.addEventListener('mousedown', e => {
+      const [mx, my] = getCurveCanvasXY(canvas, e);
+      curveDragIdx = findNearestPt(canvas, mx, my);
+      if (curveDragIdx >= 0) { e.preventDefault(); canvas.style.cursor = 'grabbing'; }
+    });
+
+    window.addEventListener('mousemove', e => {
+      if (curveDragIdx >= 0) {
+        const [mx, my] = getCurveCanvasXY(canvas, e);
+        moveDragPt(canvas, mx, my);
+        return;
+      }
+      const [mx, my] = getCurveCanvasXY(canvas, e);
+      const h = findNearestPt(canvas, mx, my);
+      if (h !== curveHoverIdx) {
+        curveHoverIdx = h;
+        canvas.style.cursor = h >= 0 ? 'grab' : 'crosshair';
+        drawCurveEditor();
+      }
+    });
+
+    window.addEventListener('mouseup', () => {
+      if (curveDragIdx >= 0) { curveDragIdx = -1; canvas.style.cursor = 'crosshair'; }
+    });
+
+    // Touch
+    canvas.addEventListener('touchstart', e => {
+      const t = e.touches[0];
+      const [mx, my] = getCurveCanvasXY(canvas, t);
+      curveDragIdx = findNearestPt(canvas, mx, my);
+      if (curveDragIdx >= 0) e.preventDefault();
+    }, { passive: false });
+
+    canvas.addEventListener('touchmove', e => {
+      if (curveDragIdx < 0) return;
+      const t = e.touches[0];
+      const [mx, my] = getCurveCanvasXY(canvas, t);
+      moveDragPt(canvas, mx, my);
+      e.preventDefault();
+    }, { passive: false });
+
+    canvas.addEventListener('touchend', () => { curveDragIdx = -1; });
+
+    buildCurveLUT();
+    drawCurveEditor();
+  }, 0);
+
+  // ── Points stepper ────────────────────────────────────
+  setTimeout(() => {
+    const minusBtn = document.getElementById('dbg-pts-minus');
+    const plusBtn  = document.getElementById('dbg-pts-plus');
+    const countEl  = document.getElementById('dbg-pts-count');
+    if (!minusBtn || !plusBtn) return;
+
+    minusBtn.addEventListener('click', () => {
+      const pts = cfg.curvePoints;
+      if (pts.length <= 2) return;
+      const mid = Math.floor(pts.length / 2);
+      pts.splice(mid, 1);
+      if (countEl) countEl.textContent = pts.length;
+      buildCurveLUT();
+      drawCurveEditor();
+    });
+
+    plusBtn.addEventListener('click', () => {
+      const pts = cfg.curvePoints;
+      if (pts.length >= 8) return;
+      let maxGap = 0, insertAfter = 0;
+      for (let i = 0; i < pts.length - 1; i++) {
+        const gap = pts[i + 1][0] - pts[i][0];
+        if (gap > maxGap) { maxGap = gap; insertAfter = i; }
+      }
+      const newX = (pts[insertAfter][0] + pts[insertAfter + 1][0]) / 2;
+      const newY = evalCurve(pts, newX);
+      pts.splice(insertAfter + 1, 0, [newX, newY]);
+      if (countEl) countEl.textContent = pts.length;
+      buildCurveLUT();
+      drawCurveEditor();
+    });
+  }, 0);
 
   // ── Sync all sliders to current cfg ──────────────────
   function syncSliders() {
     for (const sec of sections) {
       for (const r of sec.rows) {
+        if (r.type === 'curve-editor') continue;
         const inp = document.getElementById('s-' + r.id);
         const val = document.getElementById('v-' + r.id);
         if (!inp || !val) continue;
@@ -303,13 +536,17 @@
         val.textContent = (r.fmt ? r.fmt(cfg[r.id]) : cfg[r.id]) + (r.unit || '');
       }
     }
+    const countEl = document.getElementById('dbg-pts-count');
+    if (countEl) countEl.textContent = cfg.curvePoints.length;
     drawFriction();
-    drawCurve();
+    buildCurveLUT();
+    drawCurveEditor();
   }
 
   // ── Wire sliders ──────────────────────────────────────
   for (const sec of sections) {
     for (const r of sec.rows) {
+      if (r.type === 'curve-editor') continue;
       const inp = document.getElementById('s-' + r.id);
       const val = document.getElementById('v-' + r.id);
       inp.addEventListener('input', function () {
@@ -317,9 +554,16 @@
         val.textContent = (r.fmt ? r.fmt(+this.value) : this.value) + (r.unit || '');
         applyCSS();
         if (r.graph === 'friction') drawFriction();
-        if (r.graph === 'curve' || r.id === 'curveSharp') drawCurve();
       });
     }
+  }
+
+  // ── Apply preset (deep-copies curvePoints) ────────────
+  function applyPreset(values) {
+    Object.assign(cfg, values);
+    cfg.curvePoints = (values.curvePoints || DEFAULT_CURVE_PTS).map(p => [...p]);
+    applyCSS();
+    syncSliders();
   }
 
   // ── Preset select ─────────────────────────────────────
@@ -333,7 +577,6 @@
       if (p.name === activeName) opt.selected = true;
       sel.appendChild(opt);
     }
-    // Show delete only for user presets
     const isUser = getUserPresets().some(p => p.name === sel.value);
     document.getElementById('dbg-del-btn').style.display = isUser ? '' : 'none';
   }
@@ -342,8 +585,7 @@
   document.getElementById('dbg-sel').addEventListener('change', function () {
     const preset = getAllPresets().find(p => p.name === this.value);
     if (!preset) return;
-    Object.assign(cfg, preset.values);
-    applyCSS(); syncSliders();
+    applyPreset(preset.values);
     const isUser = getUserPresets().some(p => p.name === this.value);
     document.getElementById('dbg-del-btn').style.display = isUser ? '' : 'none';
   });
@@ -353,7 +595,8 @@
     if (!name) return;
     const list = getUserPresets();
     const ex   = list.findIndex(p => p.name === name);
-    const entry = { name, values: { ...cfg } };
+    const entry = { name, values: { ...cfg, curvePoints: cfg.curvePoints.map(p => [...p]) } };
+    delete entry.values.curveLUT;
     if (ex >= 0) list[ex] = entry; else list.push(entry);
     saveUserPresets(list);
     rebuildSelect(name);
@@ -366,13 +609,14 @@
     const list = getUserPresets().filter(p => p.name !== name);
     saveUserPresets(list);
     rebuildSelect('Default');
-    const preset = getAllPresets().find(p => p.name === 'Default');
-    Object.assign(cfg, preset.values); applyCSS(); syncSliders();
+    applyPreset(getAllPresets().find(p => p.name === 'Default').values);
   });
 
   // ── Copy ──────────────────────────────────────────────
   document.getElementById('dbg-copy-btn').addEventListener('click', () => {
-    navigator.clipboard.writeText(JSON.stringify(cfg, null, 2)).catch(() => {});
+    const out = { ...cfg, curvePoints: cfg.curvePoints.map(p => [...p]) };
+    delete out.curveLUT;
+    navigator.clipboard.writeText(JSON.stringify(out, null, 2)).catch(() => {});
     const b = document.getElementById('dbg-copy-btn');
     b.textContent = '✓ Copied';
     setTimeout(() => { b.textContent = '⊞ Copy'; }, 1500);
@@ -380,15 +624,27 @@
 
   // ── Reset ─────────────────────────────────────────────
   document.getElementById('dbg-reset-btn').addEventListener('click', () => {
-    Object.assign(cfg, DEFAULTS); applyCSS(); syncSliders();
+    applyPreset(DEFAULTS);
+    cfg.curvePoints = DEFAULT_CURVE_PTS.map(p => [...p]);
     rebuildSelect('Default');
     document.getElementById('dbg-sel').value = 'Default';
+    syncSliders();
   });
 
   // ── Toggle open/close ─────────────────────────────────
   let isOpen = false;
-  function openPanel()  { isOpen = true;  panel.classList.add('is-open');    toggleBtn.classList.add('is-active');    drawFriction(); drawCurve(); }
-  function closePanel() { isOpen = false; panel.classList.remove('is-open'); toggleBtn.classList.remove('is-active'); }
+  function openPanel()  {
+    isOpen = true;
+    panel.classList.add('is-open');
+    toggleBtn.classList.add('is-active');
+    drawFriction();
+    drawCurveEditor();
+  }
+  function closePanel() {
+    isOpen = false;
+    panel.classList.remove('is-open');
+    toggleBtn.classList.remove('is-active');
+  }
 
   toggleBtn.addEventListener('click', () => isOpen ? closePanel() : openPanel());
   document.getElementById('dbg-close').addEventListener('click', closePanel);
@@ -497,7 +753,6 @@
       padding: 7px 0 5px; border-top: 1px solid rgba(255,255,255,0.05);
       cursor: pointer; user-select: none; transition: color 0.15s;
     }
-    .dbg-sec + .dbg-sec .dbg-sec-head { }
     .dbg-sec:first-of-type .dbg-sec-head { border-top: none; }
     .dbg-sec-head:hover { color: #666; }
     .dbg-arrow { font-size: 8px; color: #2a2a2a; }
@@ -537,6 +792,36 @@
       display: block; margin-top: 3px;
     }
 
+    /* Curve editor canvas */
+    .dbg-curve-canvas {
+      width: 100%; height: auto; border-radius: 6px;
+      display: block;
+      border: 1px solid rgba(255,255,255,0.06);
+    }
+
+    /* Points stepper */
+    .dbg-pts-row {
+      display: flex; justify-content: space-between; align-items: center;
+      margin-top: 6px;
+    }
+    .dbg-pts-ctrl {
+      display: flex; align-items: center; gap: 6px;
+    }
+    .dbg-pts-btn {
+      width: 22px; height: 22px;
+      background: rgba(255,255,255,0.07);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 5px; color: #ccc; font-size: 14px;
+      cursor: pointer; display: flex; align-items: center; justify-content: center;
+      line-height: 1; transition: background 0.15s, color 0.15s;
+      font-family: inherit;
+    }
+    .dbg-pts-btn:hover { background: rgba(255,255,255,0.15); color: #fff; }
+    #dbg-pts-count {
+      color: #ccc; font-size: 11px; font-weight: 600;
+      font-variant-numeric: tabular-nums; min-width: 14px; text-align: center;
+    }
+
     #dbg-tip {
       position: fixed; z-index: 100000;
       max-width: 210px; padding: 10px 12px;
@@ -553,5 +838,5 @@
 
   applyCSS();
   drawFriction();
-  drawCurve();
+  buildCurveLUT();
 })();
