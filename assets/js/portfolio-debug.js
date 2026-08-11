@@ -13,7 +13,7 @@
     speed0: 1.00, speed1: 0.85, speed2: 0.70,
     sceneTiltX: 0, sceneTiltY: 0, sceneSkewX: 0, cylAxis: 0, bowlStrength: 0,
     pitCenterY: 0.75, pitRadius: 200, pitDepth: 0,
-    bulgeStrength: 18, bulgeSmooth: 72, warpStrength: 50,
+    bulgeStrength: 18, bulgeSmooth: 72, warpStrength: 0,
   };
   const DEFAULT_CURVE_PTS = [[0, 0], [0.5, 0.5], [1, 1]];
 
@@ -35,6 +35,19 @@
     {
       name: 'Flat',
       values: { ...DEFAULTS, cylR: 10000, zMult: 0, maxDeg: 2, flatZone: 600, fadeZone: 0, bowlStrength: 0, pitDepth: 0 },
+    },
+    {
+      name: 'Warp',
+      values: {
+        ...DEFAULTS,
+        cylR: 10000, zMult: 0, maxDeg: 56,
+        flatZone: 0, fadeZone: 575,
+        persp: 2900,
+        sensitivity: 0.1, friction: 0.938, smoothR: 89,
+        pitCenterY: 0.67, pitRadius: 50, pitDepth: 0,
+        bulgeStrength: 49, bulgeSmooth: 44, warpStrength: 500,
+        curvePoints: [[0, 0], [0.3449421425905188, 0.9901811248808389], [1, 1]],
+      },
     },
   ];
 
