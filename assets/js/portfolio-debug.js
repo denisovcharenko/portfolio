@@ -1,9 +1,22 @@
 'use strict';
 
+// Public default config — Warp Dynamic for all visitors
+window.__cylCfg = {
+  cylR: 10000, zMult: 0, maxDeg: 56, maxDegMobile: 14,
+  flatZone: 0, fadeZone: 575,
+  persp: 2900, origX: 85, origY: 92,
+  sensitivity: 0.1, friction: 0.938, maxVel: 80, smoothR: 89, shrinkDelay: 60,
+  crossSpeed: 0.40, crossSmooth: 82,
+  speed0: 1.00, speed1: 0.85, speed2: 0.70,
+  sceneTiltX: 0, sceneTiltY: 0, sceneSkewX: 0, cylAxis: 0, bowlStrength: 0,
+  pitCenterY: 0.67, pitRadius: 50, pitDepth: 0,
+  bulgeStrength: 49, bulgeSmooth: 44, warpStrength: 500, warpBase: 0,
+};
+
 (function () {
   if (!new URLSearchParams(window.location.search).has('admin')) return;
 
-  // ── Default config ────────────────────────────────────
+  // ── Default config (admin panel baseline) ─────────────
   const DEFAULTS = {
     cylR: 3000, zMult: 8.0, maxDeg: 9, maxDegMobile: 0,
     flatZone: 110, fadeZone: 545,
@@ -17,8 +30,8 @@
   };
   const DEFAULT_CURVE_PTS = [[0, 0], [0.5, 0.5], [1, 1]];
 
-  window.__cylCfg = Object.assign({}, DEFAULTS);
   const cfg = window.__cylCfg;
+  Object.assign(cfg, DEFAULTS);
   cfg.curvePoints = DEFAULT_CURVE_PTS.map(p => [...p]);
 
   // ── Built-in presets ──────────────────────────────────
@@ -60,6 +73,62 @@
         pitCenterY: 0.67, pitRadius: 50, pitDepth: 0,
         bulgeStrength: 49, bulgeSmooth: 44, warpStrength: 500, warpBase: 0, maxDegMobile: 14,
         curvePoints: [[0, 0], [0.3449421425905188, 0.9901811248808389], [1, 1]],
+      },
+    },
+    {
+      name: 'Cinema',
+      values: {
+        ...DEFAULTS,
+        cylR: 900, zMult: 14, maxDeg: 28, maxDegMobile: 10,
+        flatZone: 30, fadeZone: 180,
+        persp: 680, origX: 82, origY: 88,
+        sensitivity: 0.07, friction: 0.96, smoothR: 8,
+        bulgeStrength: 42, bulgeSmooth: 55, warpStrength: 0, warpBase: 0,
+      },
+    },
+    {
+      name: 'Orbit',
+      values: {
+        ...DEFAULTS,
+        cylR: 2200, zMult: 8, maxDeg: 24, maxDegMobile: 10,
+        flatZone: 0, fadeZone: 360,
+        cylAxis: 0.78,
+        persp: 1100, origX: 50, origY: 50,
+        sensitivity: 0.09, friction: 0.945, smoothR: 6,
+        bulgeStrength: 22, bulgeSmooth: 62, warpStrength: 0, warpBase: 0,
+      },
+    },
+    {
+      name: 'Elastic',
+      values: {
+        ...DEFAULTS,
+        cylR: 2800, zMult: 5, maxDeg: 11, maxDegMobile: 8,
+        flatZone: 90, fadeZone: 430,
+        persp: 1800, origX: 85, origY: 92,
+        sensitivity: 0.13, friction: 0.935, smoothR: 4,
+        bulgeStrength: 28, bulgeSmooth: 38, warpStrength: 200, warpBase: 0.06, maxDegMobile: 8,
+      },
+    },
+    {
+      name: 'Float',
+      values: {
+        ...DEFAULTS,
+        cylR: 4500, zMult: 3, maxDeg: 7, maxDegMobile: 6,
+        flatZone: 160, fadeZone: 500,
+        persp: 2400, origX: 85, origY: 92,
+        sensitivity: 0.055, friction: 0.972, smoothR: 65,
+        bulgeStrength: 14, bulgeSmooth: 82, warpStrength: 260, warpBase: 0.20, maxDegMobile: 6,
+      },
+    },
+    {
+      name: 'Vortex',
+      values: {
+        ...DEFAULTS,
+        cylR: 480, zMult: 16, maxDeg: 55, maxDegMobile: 18,
+        flatZone: 0, fadeZone: 110,
+        persp: 480, origX: 85, origY: 75,
+        sensitivity: 0.11, friction: 0.92, smoothR: 3,
+        bulgeStrength: 62, bulgeSmooth: 32, warpStrength: 0, warpBase: 0,
       },
     },
   ];

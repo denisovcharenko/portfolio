@@ -332,8 +332,30 @@ img.portfolio-left-img,
 
 /* ─── MOBILE CASE BAR (hidden on desktop) ────────── */
 .mobile-case-bar { display: none; }
-.mobile-back-btn { display: none; }
 .mobile-case-name { display: none; }
+
+/* Mobile close button — hidden until case opens */
+.mobile-close-btn {
+  display: none;
+  position: fixed;
+  bottom: 24px;
+  left: 16px;
+  z-index: 200;
+  width: 44px;
+  height: 44px;
+  background: rgba(255, 255, 255, 0.10);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 14px;
+  color: #fff;
+  cursor: pointer;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s;
+}
+.mobile-close-btn svg { width: 18px; height: 18px; }
+.mobile-close-btn:active { background: rgba(255, 255, 255, 0.22); }
 
 /* ─── MOBILE (≤ 599px) ───────────────────────────── */
 @media (max-width: 599px) {
@@ -494,22 +516,9 @@ img.portfolio-left-img,
     height: 48px;
   }
 
-  .mobile-back-btn {
+  .mobile-close-btn.visible {
     display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 32px;
-    height: 32px;
-    background: rgba(255, 255, 255, 0.08);
-    border: none;
-    border-radius: 8px;
-    color: #fff;
-    cursor: pointer;
-    flex-shrink: 0;
-    transition: background 0.15s;
   }
-  .mobile-back-btn:active { background: rgba(255, 255, 255, 0.18); }
-  .mobile-back-btn svg { width: 18px; height: 18px; }
 
   .mobile-case-name {
     display: block;

@@ -409,13 +409,16 @@ function tick() {
       // Scale warp depth so visual intensity matches desktop at same warpStrength.
       // Mobile perspective is hardcoded 900px; desktop uses persp param.
       const mobileDepthScale = 900 / (c.persp ?? 1450);
+      // warpNorm: tilt fades in smoothly with depth — 0 at rest, 1 at ≥20px
+      const warpNorm = Math.min(1, Math.abs(warpDepth) / 20);
       thumbCaches[i].forEach((thumb, j) => {
         if (i < COL_MAX - activeN) { thumb.style.transform = ''; return; }
+        if (warpNorm < 0.005) { thumb.style.transform = ''; return; }
         const cardCY = COL_TOPS[i] + j * step + thumbH * 0.5 - rightLY[i];
         const t  = (cardCY - VH * 0.5) / (VH * 0.5);
         const tc = Math.max(-1, Math.min(1, t));
         const sign = warpDepth >= 0 ? 1 : -1;
-        const rotX = (-(tc * maxR * sign)).toFixed(2);
+        const rotX = (-(tc * maxR * sign * warpNorm)).toFixed(2);
         const tz   = (warpDepth * mobileDepthScale * (1 - tc * tc)).toFixed(1);
         thumb.style.transform = `rotateX(${rotX}deg) translateZ(${tz}px)`;
       });
@@ -738,6 +741,9 @@ function openMobileCase(idx) {
 
   if (descWrap) descWrap.classList.add('mobile-desc-on');
 
+  const closeBtn = document.getElementById('mobile-close');
+  if (closeBtn) closeBtn.classList.add('visible');
+
   gsap.fromTo(leftClip, { x: '100%' }, { x: '0%', duration: 0.38, ease: 'power3.out' });
 }
 
@@ -745,6 +751,9 @@ function closeMobileCase() {
   mobileCaseOpen = false;
   if (descOpen) setDescOpen(false);
   if (descWrap) descWrap.classList.remove('mobile-desc-on');
+
+  const closeBtn = document.getElementById('mobile-close');
+  if (closeBtn) closeBtn.classList.remove('visible');
 
   gsap.to(leftClip, {
     x: '100%', duration: 0.30, ease: 'power2.inOut',
@@ -762,7 +771,7 @@ function initMobile(portfolio) {
   gsap.set(leftClip, { x: '100%' });
 
   // ── Back button ──────────────────────────────────
-  document.getElementById('mobile-back')?.addEventListener('click', closeMobileCase);
+  document.getElementById('mobile-close')?.addEventListener('click', closeMobileCase);
 
   // ── Touch scroll for thumbnail columns ───────────
   let tY = 0, tActive = false;
