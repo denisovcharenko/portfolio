@@ -381,13 +381,19 @@ img.portfolio-left-img,
   .portfolio-thumbs.col-2 { left: 4px;                                right: auto; top: calc(38px - 9px);  }
   .portfolio-thumbs.col-3 { left: calc((100vw - 12px) / 2 + 8px);    right: auto; top: calc(38px + 10px); }
 
-  /* Prevent scene-level JS tilt on mobile (cursor-driven), keep perspective for cylinder depth */
+  /* No 3D cylinder on mobile — flatten compositing context to free GPU layers */
   #col-3d-scene {
-    perspective-origin: 50% 50% !important; /* centered for mobile layout */
+    perspective: none !important;
+    perspective-origin: 50% 50% !important;
     transform: none !important;
   }
 
+  .portfolio-thumbs {
+    transform-style: flat;
+  }
+
   .portfolio-thumb {
+    will-change: auto;
     border-radius: 4px;
   }
 

@@ -89,6 +89,7 @@ let currentProjectIdx = -1;
 let descOpen = false;
 
 const MOBILE = window.innerWidth <= 599;
+let currentlyMobile = MOBILE;
 
 // ─── RESPONSIVE COLUMN SYSTEM ────────────────────────
 const COL_W        = 140;   // column width px
@@ -373,6 +374,7 @@ function tick() {
   const kR = lerpK(lc('smoothR', SMOOTH_R), dt);
   const kL = lerpK(lcl('smoothL', SMOOTH_L), dt);
   const VH = window.innerHeight;
+  const VW = window.innerWidth;
 
   // ── Right columns ─────────────────────────────────
   cols.forEach((col, i) => {
@@ -394,7 +396,11 @@ function tick() {
 
     col.style.transform = `translateY(${-rightLY[i]}px)`;
 
-    const step     = thumbH + (window.innerWidth <= 599 ? 12 : RIGHT_GAP);
+    // On mobile: skip expensive per-thumb 3D cylinder math — compositor handles
+    // the column scroll via translateY above; rotateX/Y/Z are pure GPU overhead.
+    if (currentlyMobile) return;
+
+    const step     = thumbH + RIGHT_GAP;
     const c        = window.__cylCfg || {};
     const liveCYL  = c.cylR         ?? CYLR;
     const zMult    = c.zMult        ?? 1;
@@ -406,7 +412,6 @@ function tick() {
     const pitCY    = VH * (c.pitCenterY ?? 0.75);
     const pitSigma = c.pitRadius    ?? 200;
     const pitDepth = c.pitDepth ?? 0;
-    const VW       = window.innerWidth;
     const dx       = colCenterX[i] - VW * 0.5;
     const radH     = (dx / liveCYL) * bowlStr;
 
@@ -581,10 +586,13 @@ async function init() {
       const nowMobile  = vw <= MOBILE_BP;
       const crossed    = nowMobile !== prevWasMobile;
       prevWasMobile    = nowMobile;
+      currentlyMobile  = nowMobile;
 
       // ── Entered mobile CSS range ─────────────────────
       if (nowMobile) {
         cols.forEach(col => { col.style.opacity = ''; col.style.pointerEvents = ''; });
+        // Clear any 3D cylinder transforms left over from desktop
+        if (crossed) thumbCaches.forEach(col => col.forEach(t => { t.style.transform = ''; }));
         activeN = COL_MAX; pendingN = null; pendingVW = null;
         // If just crossed from desktop: push leftClip off-screen
         if (crossed && !mobileCaseOpen) gsap.set(leftClip, { x: '100%' });
