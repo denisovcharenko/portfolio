@@ -13,7 +13,7 @@
     speed0: 1.00, speed1: 0.85, speed2: 0.70,
     sceneTiltX: 0, sceneTiltY: 0, sceneSkewX: 0, cylAxis: 0, bowlStrength: 0,
     pitCenterY: 0.75, pitRadius: 200, pitDepth: 0,
-    bulgeStrength: 18, bulgeSmooth: 72,
+    bulgeStrength: 18, bulgeSmooth: 72, warpStrength: 50,
   };
   const DEFAULT_CURVE_PTS = [[0, 0], [0.5, 0.5], [1, 1]];
 
@@ -71,8 +71,9 @@
         { id: 'maxVel',      label: 'Max Velocity', tip: 'Максимальна швидкість прокрутки в пікселях за кадр. Обмежує "розкид" при різких та швидких рухах.', min: 20, max: 400, step: 5, fmt: v => Math.round(v), unit: 'px' },
         { id: 'smoothR',     label: 'Smoothness',   tip: 'Кількість кадрів для усереднення швидкості колонок. Більше = плавніший, але менш чуйний рух.', min: 0, max: 98, step: 1, fmt: v => Math.round(v), unit: '' },
         { id: 'shrinkDelay',   label: 'Shrink Delay',   tip: 'Затримка перед поверненням карток до повного розміру після зупинки скролу. 0 = миттєво, 600 = затримка 600мс.', min: 0, max: 600, step: 10, fmt: v => Math.round(v), unit: 'ms' },
-        { id: 'bulgeStrength', label: 'Bulge Strength', tip: 'Сила вигину всієї композиції при скролі. 0 = вимкнено, 100 = максимальний нахил ±5°. Як у jesperlandberg — чим швидше скрол, тим більший вигин.', min: 0, max: 100, step: 1, fmt: v => Math.round(v), unit: '' },
-        { id: 'bulgeSmooth',   label: 'Bulge Decay',    tip: 'Плавність загасання вигину після зупинки скролу. Менше = різкіше повернення до рівного положення, більше = довше "дихає".', min: 0, max: 98, step: 1, fmt: v => Math.round(v), unit: '' },
+        { id: 'bulgeStrength', label: 'Bulge Tilt',     tip: 'Сила нахилу всієї сцени (rotateX) при скролі на десктопі. 0 = вимкнено.', min: 0, max: 100, step: 1, fmt: v => Math.round(v), unit: '' },
+        { id: 'bulgeSmooth',   label: 'Bulge Decay',    tip: 'Плавність загасання вигину після зупинки скролу. Менше = різкіше повернення, більше = довше "дихає".', min: 0, max: 98, step: 1, fmt: v => Math.round(v), unit: '' },
+        { id: 'warpStrength',  label: 'Warp Strength',  tip: 'Сила pixel-warp ефекту на мобільному (SVG feDisplacementMap). Центр екрану вигинається до глядача при скролі — як у jesperlandberg. 0 = вимкнено.', min: 0, max: 100, step: 1, fmt: v => Math.round(v), unit: '' },
       ],
     },
     {
