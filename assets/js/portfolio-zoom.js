@@ -254,6 +254,7 @@
 
     leftPanel.addEventListener('click', e => {
       if (isOpen || isAnim) return;
+      if (window.innerWidth <= 599) return;
 
       const img = e.target.closest('img.portfolio-left-img');
       if (img) { open('image', img); return; }

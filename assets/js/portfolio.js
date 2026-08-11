@@ -747,6 +747,7 @@ function openMobileCase(idx) {
     const loopH = leftClip.scrollHeight / 2;
     if (loopH > 10) {
       leftClip._loopH = loopH;
+      leftClip.scrollTop = loopH; // start at midpoint so both up and down loop
       leftClip.addEventListener('scroll', mobileLoopScroll, { passive: true });
     }
   });
@@ -761,8 +762,8 @@ function mobileLoopScroll() {
   const loopH = leftClip._loopH;
   if (!loopH) return;
   const st = leftClip.scrollTop;
-  if (st >= loopH) leftClip.scrollTop = st - loopH;
-  else if (st < 0)  leftClip.scrollTop = st + loopH;
+  if (st >= loopH * 1.8) leftClip.scrollTop = st - loopH;
+  else if (st <= loopH * 0.2) leftClip.scrollTop = st + loopH;
 }
 
 function closeMobileCase() {

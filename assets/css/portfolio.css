@@ -500,11 +500,14 @@ img.portfolio-left-img,
   .portfolio-left-img {
     width: 100%;
     border-radius: 0;
+    cursor: default;
   }
 
-  img.portfolio-left-img {
+  img.portfolio-left-img,
+  .portfolio-left-img.is-video {
     width: 100%;
     height: auto;
+    cursor: default;
   }
 
   /* Mobile case bar — hidden, existing nav stays as header */
