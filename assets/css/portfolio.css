@@ -372,7 +372,7 @@ img.portfolio-left-img,
     justify-content: flex-start;
     padding: 7px 8px;
     gap: 3px;
-    z-index: 50;
+    z-index: 150;
   }
 
   /* Make nav buttons slightly smaller on mobile */
@@ -468,10 +468,10 @@ img.portfolio-left-img,
     visibility: visible;
   }
 
-  /* Left panel — off-screen by default, slides in as overlay */
+  /* Left panel — off-screen by default, slides in below the nav */
   .portfolio-left-clip {
     position: fixed;
-    top: 0;
+    top: 38px;
     left: 0;
     right: 0;
     bottom: 0;
@@ -489,11 +489,11 @@ img.portfolio-left-img,
     pointer-events: auto;
   }
 
-  /* Left panel content — no JS transform, natural height */
+  /* Left panel content — no extra padding, clip already starts below nav */
   .portfolio-left {
     transform: none !important;
     width: 100%;
-    padding-top: 20px;
+    padding-top: 0;
     padding-bottom: 40px;
     overflow: visible;
   }
