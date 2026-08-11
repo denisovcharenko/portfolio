@@ -383,7 +383,9 @@ function tick() {
   // ── Right columns ─────────────────────────────────
   cols.forEach((col, i) => {
     rightVY[i] += velR[i];
-    velR[i] *= lc('friction', FRICTION);
+    velR[i] *= currentlyMobile
+      ? (lc('frictionMobile', null) ?? lc('friction', FRICTION))
+      : lc('friction', FRICTION);
     if (Math.abs(velR[i]) < MIN_VEL) velR[i] = 0;
 
     rightLY[i] += (rightVY[i] - rightLY[i]) * kR;
@@ -741,14 +743,24 @@ function openMobileCase(idx) {
 
   if (descWrap) descWrap.classList.add('mobile-desc-on');
 
-  // Infinity scroll: after layout, attach a scroll listener that teleports
-  // back when the user enters the clone section (second half of content).
+  // Infinity scroll: teleport when crossing 20%/80% of the doubled content.
+  // loopH is always read fresh from scrollHeight (handles tall images that load late).
   requestAnimationFrame(() => {
-    const loopH = leftClip.scrollHeight / 2;
-    if (loopH > 10) {
-      leftClip._loopH = loopH;
-      leftClip.scrollTop = loopH; // start at midpoint so both up and down loop
-      leftClip.addEventListener('scroll', mobileLoopScroll, { passive: true });
+    leftClip._loopActive = true;
+    leftClip.addEventListener('scroll', mobileLoopScroll, { passive: true });
+
+    const centerScroll = () => {
+      const loopH = leftClip.scrollHeight / 2;
+      if (loopH > 10) leftClip.scrollTop = loopH;
+    };
+    centerScroll();
+
+    // Re-center once tall images finish loading (e.g. full-page screenshots)
+    const pending = Array.from(leftClip.querySelectorAll('img')).filter(img => !img.complete);
+    if (pending.length) {
+      let done = 0;
+      const onLoad = () => { if (++done >= pending.length) centerScroll(); };
+      pending.forEach(img => img.addEventListener('load', onLoad, { once: true }));
     }
   });
 
@@ -759,8 +771,9 @@ function openMobileCase(idx) {
 }
 
 function mobileLoopScroll() {
-  const loopH = leftClip._loopH;
-  if (!loopH) return;
+  if (!leftClip._loopActive) return;
+  const loopH = leftClip.scrollHeight / 2;
+  if (loopH < 10) return;
   const st = leftClip.scrollTop;
   if (st >= loopH * 1.8) leftClip.scrollTop = st - loopH;
   else if (st <= loopH * 0.2) leftClip.scrollTop = st + loopH;
@@ -769,7 +782,7 @@ function mobileLoopScroll() {
 function closeMobileCase() {
   mobileCaseOpen = false;
   leftClip.removeEventListener('scroll', mobileLoopScroll);
-  leftClip._loopH = 0;
+  leftClip._loopActive = false;
   if (descOpen) setDescOpen(false);
   if (descWrap) descWrap.classList.remove('mobile-desc-on');
 
