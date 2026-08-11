@@ -1,16 +1,17 @@
 'use strict';
 
-// Public default config — Warp Dynamic for all visitors
+// Public default config
 window.__cylCfg = {
-  cylR: 10000, zMult: 0, maxDeg: 56, maxDegMobile: 14,
-  flatZone: 0, fadeZone: 575,
-  persp: 2900, origX: 85, origY: 92,
-  sensitivity: 0.1, friction: 0.938, maxVel: 80, smoothR: 89, shrinkDelay: 60,
+  cylR: 3000, zMult: 0, maxDeg: 56, maxDegMobile: 14,
+  flatZone: 600, fadeZone: 600,
+  persp: 2100, origX: 85, origY: 100,
+  sensitivity: 0.08, friction: 0.854, maxVel: 75, smoothR: 80, shrinkDelay: 50,
   crossSpeed: 0.40, crossSmooth: 82,
   speed0: 1.00, speed1: 0.85, speed2: 0.70,
   sceneTiltX: 0, sceneTiltY: 0, sceneSkewX: 0, cylAxis: 0, bowlStrength: 0,
-  pitCenterY: 0.67, pitRadius: 50, pitDepth: 0,
-  bulgeStrength: 49, bulgeSmooth: 44, warpStrength: 500, warpBase: 0,
+  pitCenterY: 0, pitRadius: 60, pitDepth: 60,
+  bulgeStrength: 50, bulgeSmooth: 50, warpStrength: 500, warpBase: 0,
+  curvePoints: [[0, 0], [0.40974244120940645, 0.7496254936674385], [1, 1]],
 };
 
 (function () {
