@@ -5,7 +5,7 @@
 
   // ── Default config ────────────────────────────────────
   const DEFAULTS = {
-    cylR: 3000, zMult: 8.0, maxDeg: 9,
+    cylR: 3000, zMult: 8.0, maxDeg: 9, maxDegMobile: 0,
     flatZone: 110, fadeZone: 545,
     persp: 1450, origX: 85, origY: 92,
     sensitivity: 0.09, friction: 0.93, maxVel: 80, smoothR: 3, shrinkDelay: 60,
@@ -45,7 +45,7 @@
         persp: 2900,
         sensitivity: 0.1, friction: 0.938, smoothR: 89,
         pitCenterY: 0.67, pitRadius: 50, pitDepth: 0,
-        bulgeStrength: 49, bulgeSmooth: 44, warpStrength: 500, warpBase: 0.4,
+        bulgeStrength: 49, bulgeSmooth: 44, warpStrength: 500, warpBase: 0.4, maxDegMobile: 14,
         curvePoints: [[0, 0], [0.3449421425905188, 0.9901811248808389], [1, 1]],
       },
     },
@@ -58,7 +58,7 @@
         persp: 2900,
         sensitivity: 0.1, friction: 0.938, smoothR: 89,
         pitCenterY: 0.67, pitRadius: 50, pitDepth: 0,
-        bulgeStrength: 49, bulgeSmooth: 44, warpStrength: 500, warpBase: 0,
+        bulgeStrength: 49, bulgeSmooth: 44, warpStrength: 500, warpBase: 0, maxDegMobile: 14,
         curvePoints: [[0, 0], [0.3449421425905188, 0.9901811248808389], [1, 1]],
       },
     },
@@ -71,7 +71,8 @@
       rows: [
         { id: 'cylR',   label: 'Radius',    tip: 'Радіус уявного циліндра вздовж якого вигинаються колонки. Менше значення — різкіший вигин (як трубочка), більше — майже пласка поверхня.', min: 100, max: 10000, step: 50, fmt: v => Math.round(v), unit: 'px' },
         { id: 'zMult',  label: 'Z Depth',   tip: 'Наскільки далеко від глядача зміщуються картинки у глибину. 0 — всі в одній площині, 16 — максимальний просторовий провал.', min: 0, max: 16, step: 0.1, fmt: v => v.toFixed(1), unit: '×' },
-        { id: 'maxDeg', label: 'Max Angle', tip: 'Максимальний кут нахилу крайніх карток. Більше — агресивніша перспектива по краях сцени.', min: 1, max: 89, step: 1, fmt: v => Math.round(v), unit: '°' },
+        { id: 'maxDeg',       label: 'Max Angle',        tip: 'Максимальний кут нахилу крайніх карток. Більше — агресивніша перспектива по краях сцени.', min: 1, max: 89, step: 1, fmt: v => Math.round(v), unit: '°' },
+        { id: 'maxDegMobile', label: 'Max Angle Mobile', tip: 'Максимальний кут нахилу карток на мобайлі (лінійна формула). 0 = успадковується від Max Angle. На мобайлі нахил лінійний (не циліндровий), тому зазвичай потрібно менше значення ніж на десктопі.', min: 0, max: 45, step: 1, fmt: v => Math.round(v), unit: '°' },
       ],
     },
     {

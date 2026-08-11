@@ -403,17 +403,20 @@ function tick() {
     // Mobile cylinder — simplified formula (no trig/exp), same visual as desktop.
     // Linear rotateX + parabolic translateZ: fast enough on A-series GPU at 60fps.
     if (currentlyMobile) {
-      const c    = window.__cylCfg || {};
-      const step = thumbH + 12;
-      const maxR = (c.maxDeg ?? 9);
+      const c      = window.__cylCfg || {};
+      const step   = thumbH + 12;
+      const maxR   = (c.maxDegMobile || c.maxDeg || 9);
+      // Scale warp depth so visual intensity matches desktop at same warpStrength.
+      // Mobile perspective is hardcoded 900px; desktop uses persp param.
+      const mobileDepthScale = 900 / (c.persp ?? 1450);
       thumbCaches[i].forEach((thumb, j) => {
         if (i < COL_MAX - activeN) { thumb.style.transform = ''; return; }
         const cardCY = COL_TOPS[i] + j * step + thumbH * 0.5 - rightLY[i];
-        const t  = (cardCY - VH * 0.5) / (VH * 0.5); // -1…+1 from centre
+        const t  = (cardCY - VH * 0.5) / (VH * 0.5);
         const tc = Math.max(-1, Math.min(1, t));
         const sign = warpDepth >= 0 ? 1 : -1;
-        const rotX = (-(tc * maxR * sign)).toFixed(2); // reverses with concave
-        const tz   = (warpDepth * (1 - tc * tc)).toFixed(1);
+        const rotX = (-(tc * maxR * sign)).toFixed(2);
+        const tz   = (warpDepth * mobileDepthScale * (1 - tc * tc)).toFixed(1);
         thumb.style.transform = `rotateX(${rotX}deg) translateZ(${tz}px)`;
       });
       return;
