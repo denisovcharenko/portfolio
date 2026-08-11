@@ -519,7 +519,7 @@ function tick() {
 
   // Mobile warp depth — signed: + = convex (scroll down), - = concave (scroll up)
   const warpStr   = (c2.warpStrength ?? 50);
-  const baseDepth = warpStr * 0.4;                                 // slight always-on convex
+  const baseDepth = warpStr * (c2.warpBase ?? 0);
   const velBoost  = avgVel * Math.abs(avgVel) * warpStr * 0.0002; // signed velocity kick
   warpDepth += (baseDepth + velBoost - warpDepth) * kBulge;
 

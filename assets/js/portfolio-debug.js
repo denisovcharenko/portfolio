@@ -13,7 +13,7 @@
     speed0: 1.00, speed1: 0.85, speed2: 0.70,
     sceneTiltX: 0, sceneTiltY: 0, sceneSkewX: 0, cylAxis: 0, bowlStrength: 0,
     pitCenterY: 0.75, pitRadius: 200, pitDepth: 0,
-    bulgeStrength: 18, bulgeSmooth: 72, warpStrength: 0,
+    bulgeStrength: 18, bulgeSmooth: 72, warpStrength: 0, warpBase: 0,
   };
   const DEFAULT_CURVE_PTS = [[0, 0], [0.5, 0.5], [1, 1]];
 
@@ -45,7 +45,20 @@
         persp: 2900,
         sensitivity: 0.1, friction: 0.938, smoothR: 89,
         pitCenterY: 0.67, pitRadius: 50, pitDepth: 0,
-        bulgeStrength: 49, bulgeSmooth: 44, warpStrength: 500,
+        bulgeStrength: 49, bulgeSmooth: 44, warpStrength: 500, warpBase: 0.4,
+        curvePoints: [[0, 0], [0.3449421425905188, 0.9901811248808389], [1, 1]],
+      },
+    },
+    {
+      name: 'Warp Dynamic',
+      values: {
+        ...DEFAULTS,
+        cylR: 10000, zMult: 0, maxDeg: 56,
+        flatZone: 0, fadeZone: 575,
+        persp: 2900,
+        sensitivity: 0.1, friction: 0.938, smoothR: 89,
+        pitCenterY: 0.67, pitRadius: 50, pitDepth: 0,
+        bulgeStrength: 49, bulgeSmooth: 44, warpStrength: 500, warpBase: 0,
         curvePoints: [[0, 0], [0.3449421425905188, 0.9901811248808389], [1, 1]],
       },
     },
@@ -86,7 +99,8 @@
         { id: 'shrinkDelay',   label: 'Shrink Delay',   tip: 'Затримка перед поверненням карток до повного розміру після зупинки скролу. 0 = миттєво, 600 = затримка 600мс.', min: 0, max: 600, step: 10, fmt: v => Math.round(v), unit: 'ms' },
         { id: 'bulgeStrength', label: 'Bulge Tilt',     tip: 'Сила нахилу всієї сцени (rotateX) при скролі на десктопі. 0 = вимкнено.', min: 0, max: 100, step: 1, fmt: v => Math.round(v), unit: '' },
         { id: 'bulgeSmooth',   label: 'Bulge Decay',    tip: 'Плавність загасання вигину після зупинки скролу. Менше = різкіше повернення, більше = довше "дихає".', min: 0, max: 98, step: 1, fmt: v => Math.round(v), unit: '' },
-        { id: 'warpStrength',  label: 'Warp Strength',  tip: 'Сила вигину композиції при скролі (translateZ по параболі). 0 = вимкнено, 500 = максимальний ефект.', min: 0, max: 500, step: 5, fmt: v => Math.round(v), unit: '' },
+        { id: 'warpStrength',  label: 'Warp Strength',  tip: 'Сила вигину при скролі (translateZ по параболі). 0 = вимкнено, 500 = максимальний ефект.', min: 0, max: 500, step: 5, fmt: v => Math.round(v), unit: '' },
+        { id: 'warpBase',      label: 'Warp Base',      tip: 'Базовий вигин у спокої — множник від Warp Strength. 0 = повністю плоска у спокої, 1 = завжди максимальний вигин незалежно від швидкості.', min: 0, max: 1, step: 0.05, fmt: v => v.toFixed(2), unit: '' },
       ],
     },
     {
