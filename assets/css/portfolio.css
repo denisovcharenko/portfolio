@@ -218,6 +218,7 @@ img.portfolio-left-img,
   transform-origin: center center;
   scale: 1;
   border-radius: 0px;
+  will-change: transform;
   transition: scale 340ms cubic-bezier(0.25, 0.46, 0.45, 0.94),
               border-radius 340ms cubic-bezier(0.25, 0.46, 0.45, 0.94),
               opacity 0.3s ease;
@@ -359,6 +360,18 @@ img.portfolio-left-img,
 
 /* ─── MOBILE (≤ 599px) ───────────────────────────── */
 @media (max-width: 599px) {
+
+  /* Custom scroll — tell browser not to handle touches here so passive listeners work */
+  .portfolio {
+    touch-action: none;
+    overscroll-behavior: none;
+  }
+
+  /* Left clip keeps native pan-y scroll (case detail) */
+  .portfolio-left-clip {
+    touch-action: pan-y;
+    overscroll-behavior: contain;
+  }
 
   /* Nav moves to top */
   .portfolio-nav {

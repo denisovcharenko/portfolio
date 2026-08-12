@@ -749,24 +749,27 @@ function openMobileCase(idx) {
   if (descWrap) descWrap.classList.add('mobile-desc-on');
 
   // Infinity scroll: teleport when crossing 20%/80% of the doubled content.
-  // loopH is always read fresh from scrollHeight (handles tall images that load late).
+  // _loopH is cached and updated via ResizeObserver — never read scrollHeight in the hot path.
   requestAnimationFrame(() => {
+    const updateLoopH = (recenter) => {
+      const loopH = leftClip.scrollHeight / 2;
+      if (loopH < 10) return;
+      const prev = leftClip._loopH || 0;
+      leftClip._loopH = loopH;
+      if (recenter || Math.abs(loopH - prev) > prev * 0.1) {
+        leftClip.scrollTop = loopH;
+      }
+    };
+
+    leftClip._loopH = 0;
     leftClip._loopActive = true;
     leftClip.addEventListener('scroll', mobileLoopScroll, { passive: true });
+    updateLoopH(true);
 
-    const centerScroll = () => {
-      const loopH = leftClip.scrollHeight / 2;
-      if (loopH > 10) leftClip.scrollTop = loopH;
-    };
-    centerScroll();
-
-    // Re-center once tall images finish loading (e.g. full-page screenshots)
-    const pending = Array.from(leftClip.querySelectorAll('img')).filter(img => !img.complete);
-    if (pending.length) {
-      let done = 0;
-      const onLoad = () => { if (++done >= pending.length) centerScroll(); };
-      pending.forEach(img => img.addEventListener('load', onLoad, { once: true }));
-    }
+    // Keep _loopH fresh as tall images load and expand the container
+    const ro = new ResizeObserver(() => updateLoopH(false));
+    ro.observe(leftPanel);
+    leftClip._loopRO = ro;
   });
 
   const closeBtn = document.getElementById('mobile-close');
@@ -776,9 +779,8 @@ function openMobileCase(idx) {
 }
 
 function mobileLoopScroll() {
-  if (!leftClip._loopActive) return;
-  const loopH = leftClip.scrollHeight / 2;
-  if (loopH < 10) return;
+  const loopH = leftClip._loopH;
+  if (!loopH || loopH < 10) return;
   const st = leftClip.scrollTop;
   if (st >= loopH * 1.8) leftClip.scrollTop = st - loopH;
   else if (st <= loopH * 0.2) leftClip.scrollTop = st + loopH;
@@ -788,6 +790,9 @@ function closeMobileCase() {
   mobileCaseOpen = false;
   leftClip.removeEventListener('scroll', mobileLoopScroll);
   leftClip._loopActive = false;
+  leftClip._loopH = 0;
+  leftClip._loopRO?.disconnect();
+  leftClip._loopRO = null;
   if (descOpen) setDescOpen(false);
   if (descWrap) descWrap.classList.remove('mobile-desc-on');
 
@@ -838,8 +843,7 @@ function initMobile(portfolio) {
     cols.forEach(col => col.classList.add('is-scrolling'));
     clearTimeout(shrinkTimer);
     shrinkTimer = setTimeout(() => cols.forEach(col => col.classList.remove('is-scrolling')), 300);
-    e.preventDefault();
-  }, { passive: false });
+  }, { passive: true });
 
   portfolio.addEventListener('touchend', () => { tActive = false; }, { passive: true });
 
