@@ -83,7 +83,8 @@ let leftContentCount = 4; // items in one set (before clone)
 
 let shrinkTimer = null;
 let leftScrollTimer = null;
-let rightOneSetH = 1, thumbH = 120;
+const rightOneSetHs = [1, 1, 1];
+let thumbH = 120;
 let crossAngle = 0, crossAngLY = 0;
 let currentProjectIdx = -1;
 let descOpen = false;
@@ -199,8 +200,45 @@ function preloadVideos() {
 }
 
 // ─── DOM BUILD ───────────────────────────────────────
+function getVisibleProjects() {
+  return PROJECTS.filter(p => p.name || p.thumbnail);
+}
+
+// Populate only thumbnail columns — callable from admin save without touching left panel
+function buildColumns(isMobile) {
+  const visible = getVisibleProjects();
+  // Mobile: col-0 (class col-1) is hidden by CSS → distribute only across cols[1] and cols[2]
+  const activeColIdxs = isMobile ? [1, 2] : [0, 1, 2];
+  const colProjs = [[], [], []];
+  visible.forEach((proj, i) => {
+    colProjs[activeColIdxs[i % activeColIdxs.length]].push(proj);
+  });
+
+  cols.forEach((col, ci) => {
+    col.innerHTML = '';
+    const items = colProjs[ci];
+    if (items.length === 0) return;
+    const passes = items.length > 1 ? 2 : 1;
+    for (let pass = 0; pass < passes; pass++) {
+      items.forEach(proj => {
+        const el = document.createElement('div');
+        el.className = 'portfolio-thumb';
+        if (proj.thumbnail) {
+          el.style.backgroundImage = `url(${proj.thumbnail})`;
+        } else {
+          el.style.backgroundColor = proj.color;
+        }
+        el.dataset.globalIdx = proj.idx;
+        if (pass === 1) el.dataset.clone = '1';
+        col.appendChild(el);
+      });
+    }
+  });
+}
+
 function buildDOM() {
-  const oyvdoma = PROJECTS.find(p => p.name === 'Oyvdoma') || PROJECTS[0];
+  const visible = getVisibleProjects();
+  const oyvdoma = PROJECTS.find(p => p.name === 'Oyvdoma') || visible[0] || PROJECTS[0];
 
   // On mobile the left panel starts hidden — user opens a case by tapping a thumbnail
   if (!MOBILE) {
@@ -209,26 +247,7 @@ function buildDOM() {
     updateDescription(oyvdoma.idx);
   }
 
-  cols.forEach((col, ci) => {
-    col.innerHTML = '';
-    const start = ci * N_PER_COL;
-    for (let pass = 0; pass < 2; pass++) {
-      for (let i = 0; i < N_PER_COL; i++) {
-        const el  = document.createElement('div');
-        el.className = 'portfolio-thumb';
-        const gIdx = start + i;
-        const proj = PROJECTS[gIdx] || PROJECTS[0];
-        if (proj.thumbnail) {
-          el.style.backgroundImage = `url(${proj.thumbnail})`;
-        } else {
-          el.style.backgroundColor = proj.color;
-        }
-        el.dataset.globalIdx = gIdx;
-        if (pass === 1) el.dataset.clone = '1';
-        col.appendChild(el);
-      }
-    }
-  });
+  buildColumns(MOBILE);
 }
 
 // Build left panel with infinite scroll clones
@@ -286,9 +305,12 @@ function measure() {
   const thumb = sampleCol.querySelector('.portfolio-thumb');
   if (thumb) {
     thumbH = thumb.getBoundingClientRect().height;
-    // Gap between cards matches the CSS gap on the column
     const rightGap = window.innerWidth <= 599 ? 12 : RIGHT_GAP;
-    rightOneSetH = N_PER_COL * (thumbH + rightGap);
+    // Per-column one-set height based on actual item count (excluding clone pass)
+    cols.forEach((col, i) => {
+      const n = col.querySelectorAll('.portfolio-thumb:not([data-clone])').length;
+      rightOneSetHs[i] = n > 0 ? n * (thumbH + rightGap) : 1;
+    });
   }
 
   const leftImgs = Array.from(leftPanel.querySelectorAll('.portfolio-left-img')).slice(0, leftContentCount);
@@ -399,13 +421,14 @@ function tick() {
 
     rightLY[i] += (rightVY[i] - rightLY[i]) * kR;
 
-    if (rightOneSetH > 1) {
-      if (rightLY[i] >= rightOneSetH) {
-        const d = rightLY[i] - rightOneSetH;
-        rightLY[i] = d; rightVY[i] -= rightOneSetH;
+    const setH = rightOneSetHs[i];
+    if (setH > 1) {
+      if (rightLY[i] >= setH) {
+        const d = rightLY[i] - setH;
+        rightLY[i] = d; rightVY[i] -= setH;
       }
       if (rightLY[i] < 0) {
-        rightLY[i] += rightOneSetH; rightVY[i] += rightOneSetH;
+        rightLY[i] += setH; rightVY[i] += setH;
       }
     }
 
@@ -679,8 +702,11 @@ async function init() {
       // ── Entered mobile CSS range ─────────────────────
       if (nowMobile) {
         cols.forEach(col => { col.style.opacity = ''; col.style.pointerEvents = ''; });
-        // Clear any 3D cylinder transforms left over from desktop
-        if (crossed) thumbCaches.forEach(col => col.forEach(t => { t.style.transform = ''; }));
+        if (crossed) {
+          // Redistribute projects into only the 2 visible mobile columns
+          buildColumns(true);
+          thumbCaches.forEach(col => col.forEach(t => { t.style.transform = ''; }));
+        }
         activeN = COL_MAX; pendingN = null; pendingVW = null;
         // If just crossed from desktop: push leftClip off-screen
         if (crossed && !mobileCaseOpen) gsap.set(leftClip, { x: '100%' });
@@ -695,10 +721,13 @@ async function init() {
         if (descOpen) setDescOpen(false);
         gsap.set(leftClip, { clearProps: 'x' }); // show at natural CSS position
 
+        // Redistribute projects across all 3 desktop columns
+        buildColumns(false);
+
         // Load a project into the left panel
         const deskIdx = currentProjectIdx >= 0
           ? currentProjectIdx
-          : (PROJECTS.find(p => p.name === 'Oyvdoma') || PROJECTS[0]).idx;
+          : (PROJECTS.find(p => p.name === 'Oyvdoma') || getVisibleProjects()[0] || PROJECTS[0]).idx;
         if (currentProjectIdx < 0) currentProjectIdx = deskIdx;
         setLeftContent(deskIdx);
         updateDescription(deskIdx);
@@ -732,23 +761,13 @@ async function init() {
     setProject: (idx, data) => {
       if (idx >= 0 && idx < PROJECTS.length) {
         Object.assign(PROJECTS[idx], data);
+        // Rebuild columns — handles new projects becoming visible
+        buildColumns(currentlyMobile);
+        requestAnimationFrame(() => measure());
         if (idx === currentProjectIdx) {
           setLeftContent(idx);
           updateDescription(idx);
         }
-        // Update thumbnail card in DOM
-        cols.forEach(col => {
-          col.querySelectorAll(`[data-global-idx="${idx}"]`).forEach(card => {
-            const proj = PROJECTS[idx];
-            if (proj.thumbnail) {
-              card.style.backgroundImage = `url(${proj.thumbnail})`;
-              card.style.backgroundColor = '';
-            } else {
-              card.style.backgroundImage = '';
-              card.style.backgroundColor = proj.color;
-            }
-          });
-        });
       }
     },
   };
