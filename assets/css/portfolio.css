@@ -200,6 +200,7 @@ img.portfolio-left-img,
   transform-style: preserve-3d;
   pointer-events: auto;
   will-change: transform;
+  cursor: pointer;
 }
 
 /* Anchored from right — all columns start within .portfolio bounds (overflow:hidden clips hit areas) */
