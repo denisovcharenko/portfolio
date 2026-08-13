@@ -585,7 +585,23 @@ function onWheel(e) {
 
 // ─── CLICK ───────────────────────────────────────────
 function onThumbClick(e) {
-  const thumb = e.target.closest('.portfolio-thumb');
+  let thumb = e.target.closest('.portfolio-thumb');
+  if (!thumb) {
+    // Click landed in the gap between cards or in the top dead-zone created by the
+    // pit/warp 3D effect shifting cards down from the column container top.
+    // Find the nearest visible thumb in this column.
+    const col = e.target.closest('.portfolio-thumbs');
+    if (col) {
+      let best = null, bestDist = Infinity;
+      col.querySelectorAll('.portfolio-thumb').forEach(t => {
+        const r = t.getBoundingClientRect();
+        if (r.bottom < 0 || r.top > window.innerHeight) return;
+        const dist = Math.abs((r.top + r.bottom) / 2 - e.clientY);
+        if (dist < bestDist) { bestDist = dist; best = t; }
+      });
+      if (best && bestDist < 80) thumb = best;
+    }
+  }
   if (!thumb) return;
   const idx = parseInt(thumb.dataset.globalIdx ?? 0, 10);
   if (MOBILE) { openMobileCase(idx); return; }
