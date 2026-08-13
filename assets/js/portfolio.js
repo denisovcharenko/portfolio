@@ -110,6 +110,9 @@ let activeN   = 3;   // current column count
 let pendingN  = null;
 let pendingVW = null;
 
+// Indices of cols[] that are currently populated (rightmost N on desktop, [1,2] on mobile)
+let currentActiveColIdxs = [0, 1, 2];
+
 function calcN(vw) {
   const lw    = Math.min(COL_LMAX, Math.max(COL_LMIN, vw * COL_LVW));
   const avail = vw - lw - COL_CCLEAR - COL_RM;
@@ -117,16 +120,15 @@ function calcN(vw) {
 }
 
 function applyN(n, animated) {
+  if (n === activeN) return;
   activeN = n;
-  cols.forEach((col, i) => {
-    const visible = i >= COL_MAX - n; // rightmost N columns are visible
-    if (animated) {
-      gsap.to(col, { opacity: visible ? 1 : 0, duration: 0.4, ease: 'power2.inOut' });
-    } else {
-      col.style.opacity = visible ? '1' : '0';
-    }
-    col.style.pointerEvents = visible ? '' : 'none';
-  });
+  // Rightmost N columns are active — rebuild so no project is in a hidden column
+  currentActiveColIdxs = Array.from({ length: n }, (_, i) => COL_MAX - n + i);
+  buildColumns();
+  rightLY.fill(0); rightVY.fill(0); velR.fill(0);
+  requestAnimationFrame(() => measure());
+  // All cols are visually shown — content is only in active ones, empty cols are blank
+  cols.forEach(col => { col.style.opacity = ''; col.style.pointerEvents = ''; });
 }
 
 const thumbCaches = [[], [], []];
@@ -205,13 +207,11 @@ function getVisibleProjects() {
 }
 
 // Populate only thumbnail columns — callable from admin save without touching left panel
-function buildColumns(isMobile) {
+function buildColumns() {
   const visible = getVisibleProjects();
-  // Mobile: col-0 (class col-1) is hidden by CSS → distribute only across cols[1] and cols[2]
-  const activeColIdxs = isMobile ? [1, 2] : [0, 1, 2];
   const colProjs = [[], [], []];
   visible.forEach((proj, i) => {
-    colProjs[activeColIdxs[i % activeColIdxs.length]].push(proj);
+    colProjs[currentActiveColIdxs[i % currentActiveColIdxs.length]].push(proj);
   });
 
   cols.forEach((col, ci) => {
@@ -247,7 +247,8 @@ function buildDOM() {
     updateDescription(oyvdoma.idx);
   }
 
-  buildColumns(MOBILE);
+  currentActiveColIdxs = MOBILE ? [1, 2] : [0, 1, 2];
+  buildColumns();
 }
 
 // Build left panel with infinite scroll clones
@@ -705,7 +706,8 @@ async function init() {
         cols.forEach(col => { col.style.opacity = ''; col.style.pointerEvents = ''; });
         if (crossed) {
           // Redistribute projects into only the 2 visible mobile columns
-          buildColumns(true);
+          currentActiveColIdxs = [1, 2];
+          buildColumns();
           thumbCaches.forEach(col => col.forEach(t => { t.style.transform = ''; }));
         }
         activeN = COL_MAX; pendingN = null; pendingVW = null;
@@ -723,7 +725,8 @@ async function init() {
         gsap.set(leftClip, { clearProps: 'x' }); // show at natural CSS position
 
         // Redistribute projects across all 3 desktop columns
-        buildColumns(false);
+        currentActiveColIdxs = [0, 1, 2];
+        buildColumns();
 
         // Load a project into the left panel
         const deskIdx = currentProjectIdx >= 0
@@ -763,7 +766,7 @@ async function init() {
       if (idx >= 0 && idx < PROJECTS.length) {
         Object.assign(PROJECTS[idx], data);
         // Rebuild columns — handles new projects becoming visible
-        buildColumns(currentlyMobile);
+        buildColumns();
         requestAnimationFrame(() => measure());
         if (idx === currentProjectIdx) {
           setLeftContent(idx);
