@@ -18,10 +18,10 @@ window.__portfolioData = [
     description: 'ляляля',
   },
   {
-    idx: 1, color: '#7ab4e8', name: 'pupupu',
-    thumbnail: null,
+    idx: 1, color: '#7ab4e8', name: 'malevich',
+    thumbnail: 'assets/media/cases/case-pupupu.webp',
     content: [
-
+    { type: 'image', src: 'assets/media/cases/malevich/malevich-1.webp', w: 2048, h: 1152 }
     ],
     description: '',
   },
@@ -47,6 +47,32 @@ window.__portfolioData = [
     { type: 'image', src: 'assets/media/cases/burger/burger-3.webp', w: 2880, h: 1497 }
     ],
     description: 'is a brand that challenges traditional ideas about burgers. Their concept is built on brave flavor combinations, vibrant presentation, and uncompromising quality.\n\nIt\'s not just food delivery - it\'s a lifestyle for those who value juicy, perfectly crafted burgers with character. Brave Burgers are made for people who love to experiment, explore new things, and aren\'t afraid to try something unconventional.\n\nTheir slogan could be: "Brave burgers for brave people", , because each of their burgers is a true explosion of taste and emotion.',
+    url: 'https://braveburgers.com.ua/',
+  },
+  {
+    idx: 3, color: '#c47ae8', name: '',
+    thumbnail: null,
+    content: [
+
+    ],
+    description: 'concept2',
+  },
+  {
+    idx: 4, color: '#7ae8d4', name: 'Bonavive',
+    thumbnail: 'assets/media/cases/case-bonavive.webp',
+    content: [
+    { type: 'video', src: "https://vz-b5faeb0e-c6d.b-cdn.net/7d709e97-bc13-438f-9740-38a295c4028e/play_720p.mp4", ratio: "56.25%", thumb: "https://vz-b5faeb0e-c6d.b-cdn.net/7d709e97-bc13-438f-9740-38a295c4028e/thumbnail.jpg" }
+    ],
+    description: '',
+  },
+  {
+    idx: 5, color: '#e8c97a', name: 'InteractiveArtGallary',
+    thumbnail: 'assets/media/cases/case-interactiveartgallary.webp',
+    content: [
+    { type: 'video', src: "https://vz-b5faeb0e-c6d.b-cdn.net/c7140163-e785-4e2a-af80-a39d21929dae/play_720p.mp4", ratio: "56.25%", thumb: "https://vz-b5faeb0e-c6d.b-cdn.net/c7140163-e785-4e2a-af80-a39d21929dae/thumbnail.jpg" }
+    ],
+    description: 'built a museum you navigate with your eyes 👁️\nno mouse. no touch. just look and blink.',
+    url: 'https://footer-quill-01186006.figma.site/',
   },
   {
     idx: 6, color: '#7a7ae8', name: 'Tattoo',
@@ -60,10 +86,83 @@ window.__portfolioData = [
     description: '',
   },
   {
-    idx: 13, color: '#D080F0', name: 'Barber',
+    idx: 7, color: '#e87a7a', name: 'Tricho',
+    thumbnail: 'assets/media/cases/case-tricho.webp',
+    content: [
+    { type: 'video', src: "https://vz-b5faeb0e-c6d.b-cdn.net/c74a334e-398e-4fe7-a838-926e66006f94/play_720p.mp4", ratio: "56.25%", thumb: "https://vz-b5faeb0e-c6d.b-cdn.net/c74a334e-398e-4fe7-a838-926e66006f94/thumbnail.jpg" }
+    ],
+    description: 'An interactive hover\nThe idea for trichology and hair restoration.\nHover over the bald area → hair appears.\nNot as a promise, but as a moment of recognition.',
+  },
+  {
+    idx: 8, color: '#7ae8e8', name: 'Xmaquina',
+    thumbnail: 'assets/media/cases/case-xmaquina.webp',
+    content: [
+    { type: 'video', src: "https://vz-b5faeb0e-c6d.b-cdn.net/977a1bc2-8482-455d-8820-d58dbd8f6f43/play_720p.mp4", ratio: "56.25%", thumb: "https://vz-b5faeb0e-c6d.b-cdn.net/977a1bc2-8482-455d-8820-d58dbd8f6f43/thumbnail.jpg" }
+    ],
+    description: '',
+    url: 'https://www.xmaquina.io/',
+  },
+  {
+    idx: 9, color: '#b07ae8', name: 'Artakia',
+    thumbnail: 'assets/media/cases/case-artakia.webp',
+    content: [
+    { type: 'video', src: "https://vz-b5faeb0e-c6d.b-cdn.net/7c059635-9aeb-48d4-9fe1-5b486e4c47f3/play_720p.mp4", ratio: "56.25%", thumb: "https://vz-b5faeb0e-c6d.b-cdn.net/7c059635-9aeb-48d4-9fe1-5b486e4c47f3/thumbnail.jpg" }
+    ],
+    description: 'short description',
+    url: 'https://artakia.com/',
+  },
+  {
+    idx: 11, color: '#80c0f0', name: 'ludidigital',
+    thumbnail: 'assets/media/cases/case-ludidigital.webp',
+    content: [
+    { type: 'image', src: 'assets/media/cases/ludidigital/ludidigital-7.webp', w: 3840, h: 4060 },
+    { type: 'video', src: "https://vz-b5faeb0e-c6d.b-cdn.net/acafec58-72e5-4826-b332-8615ec56d2df/play_720p.mp4", ratio: "56.25%", thumb: "https://vz-b5faeb0e-c6d.b-cdn.net/acafec58-72e5-4826-b332-8615ec56d2df/thumbnail.jpg" },
+    { type: 'image', src: 'assets/media/cases/ludidigital/ludidigital-6.webp', w: 3840, h: 4242 },
+    { type: 'image', src: 'assets/media/cases/ludidigital/ludidigital-5.webp', w: 3840, h: 5412 },
+    { type: 'image', src: 'assets/media/cases/ludidigital/ludidigital-4.webp', w: 3840, h: 4242 },
+    { type: 'image', src: 'assets/media/cases/ludidigital/ludidigital-3.webp', w: 3840, h: 13598 },
+    { type: 'video', src: "https://vz-b5faeb0e-c6d.b-cdn.net/56773499-2c31-4804-a2c2-5d339db90e31/play_720p.mp4", ratio: "56.25%", thumb: "https://vz-b5faeb0e-c6d.b-cdn.net/56773499-2c31-4804-a2c2-5d339db90e31/thumbnail.jpg" },
+    { type: 'image', src: 'assets/media/cases/ludidigital/ludidigital-2.webp', w: 3840, h: 7270 },
+    { type: 'image', src: 'assets/media/cases/ludidigital/ludidigital-1.webp', w: 3840, h: 3940 }
+    ],
+    description: '',
+  },
+  {
+    idx: 12, color: '#80f0a8', name: 'PHD',
+    thumbnail: 'assets/media/cases/case-phd.webp',
+    content: [
+    { type: 'image', src: 'assets/media/cases/phd/phd-1.webp', w: 2048, h: 1152 }
+    ],
+    description: '',
+  },
+  {
+    idx: 13, color: '#d080f0', name: 'Barber',
     thumbnail: 'assets/media/cases/case-barber.webp',
     content: [
-
+    { type: 'image', src: 'assets/media/cases/barber/barber-9.webp', w: 2880, h: 6755 },
+    { type: 'image', src: 'assets/media/cases/barber/barber-8.webp', w: 2880, h: 4868 },
+    { type: 'image', src: 'assets/media/cases/barber/barber-7.webp', w: 2880, h: 5766 },
+    { type: 'image', src: 'assets/media/cases/barber/barber-6.webp', w: 2880, h: 4164 },
+    { type: 'image', src: 'assets/media/cases/barber/barber-5.webp', w: 2880, h: 5814 },
+    { type: 'image', src: 'assets/media/cases/barber/barber-4.webp', w: 2880, h: 7008 },
+    { type: 'image', src: 'assets/media/cases/barber/barber-3.webp', w: 2880, h: 4461 },
+    { type: 'image', src: 'assets/media/cases/barber/barber-2.webp', w: 2880, h: 4385 }
+    ],
+    description: '',
+  },
+  {
+    idx: 15, color: '#f0d880', name: 'concept1',
+    thumbnail: 'assets/media/cases/case-concept1.webp',
+    content: [
+    { type: 'image', src: 'assets/media/cases/concept1/concept1-1.webp', w: 2048, h: 1152 }
+    ],
+    description: '',
+  },
+  {
+    idx: 16, color: '#8080f0', name: '404',
+    thumbnail: 'assets/media/cases/case-404.webp',
+    content: [
+    { type: 'video', src: "https://vz-b5faeb0e-c6d.b-cdn.net/83a2f27f-d9f3-4098-8605-3406b7fcde3a/play_720p.mp4", ratio: "56.25%", thumb: "https://vz-b5faeb0e-c6d.b-cdn.net/83a2f27f-d9f3-4098-8605-3406b7fcde3a/thumbnail.jpg" }
     ],
     description: '',
   },
@@ -82,6 +181,7 @@ window.__portfolioData = [
     { type: 'image', src: 'assets/media/cases/oyvdoma/oyvdoma-7.webp' }
     ],
     description: 'Home textiles brand — e-commerce website, product catalog, and visual identity. Designed around the warmth of natural fabrics with clean layouts that let the product photography breathe.',
+    url: 'https://dev.oyvdoma.com/',
   },
   {
     idx: 22, color: '#9affb5', name: 'Sauced',
@@ -104,14 +204,28 @@ window.__portfolioData = [
     { type: 'image', src: 'assets/media/cases/sauced/sauced-1.webp', w: 2880, h: 1620 }
     ],
     description: '',
+    url: 'https://www.saucedbklyn.com/',
   },
   {
-    idx: 25, color: '#FFE99A', name: 'Lotos',
+    idx: 25, color: '#ffe99a', name: 'Lotos',
     thumbnail: 'assets/media/cases/case-lotos.webp',
     content: [
-
+    { type: 'image', src: 'assets/media/cases/lotos/lotos-9.webp', w: 1920, h: 1440 },
+    { type: 'image', src: 'assets/media/cases/lotos/lotos-8.webp', w: 1920, h: 1484 },
+    { type: 'video', src: "https://vz-b5faeb0e-c6d.b-cdn.net/22fc4ce0-4a18-4147-95a2-d2ff66b3e6c2/play_720p.mp4", ratio: "56.25%", thumb: "https://vz-b5faeb0e-c6d.b-cdn.net/22fc4ce0-4a18-4147-95a2-d2ff66b3e6c2/thumbnail.jpg" },
+    { type: 'image', src: 'assets/media/cases/lotos/lotos-7.webp', w: 1920, h: 1484 },
+    { type: 'image', src: 'assets/media/cases/lotos/lotos-6.webp', w: 1920, h: 2696 },
+    { type: 'video', src: "https://vz-b5faeb0e-c6d.b-cdn.net/cee61194-946a-44bf-83af-0275289ab93a/play_720p.mp4", ratio: "56.25%", thumb: "https://vz-b5faeb0e-c6d.b-cdn.net/cee61194-946a-44bf-83af-0275289ab93a/thumbnail.jpg" },
+    { type: 'image', src: 'assets/media/cases/lotos/lotos-5.webp', w: 1920, h: 1484 },
+    { type: 'video', src: "https://vz-b5faeb0e-c6d.b-cdn.net/ca13407b-8dcf-4cc1-b90b-bdfa74881106/play_720p.mp4", ratio: "56.25%", thumb: "https://vz-b5faeb0e-c6d.b-cdn.net/ca13407b-8dcf-4cc1-b90b-bdfa74881106/thumbnail.jpg" },
+    { type: 'image', src: 'assets/media/cases/lotos/lotos-4.webp', w: 1920, h: 3503 },
+    { type: 'video', src: "https://vz-b5faeb0e-c6d.b-cdn.net/bb0ed9ce-fe92-4105-9270-acbba23c2712/play_720p.mp4", ratio: "56.25%", thumb: "https://vz-b5faeb0e-c6d.b-cdn.net/bb0ed9ce-fe92-4105-9270-acbba23c2712/thumbnail.jpg" },
+    { type: 'image', src: 'assets/media/cases/lotos/lotos-3.webp', w: 1920, h: 2824 },
+    { type: 'image', src: 'assets/media/cases/lotos/lotos-2.webp', w: 1920, h: 1440 },
+    { type: 'image', src: 'assets/media/cases/lotos/lotos-1.webp', w: 1920, h: 800 }
     ],
     description: '',
+    url: 'https://lotoscentrum.com/',
   },
   {
     idx: 28, color: '#9affff', name: 'Funcity',
