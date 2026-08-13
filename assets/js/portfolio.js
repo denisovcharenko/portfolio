@@ -293,12 +293,17 @@ function buildLeftPanel(proj) {
         const key = `v-${proj.idx}-${ci}-${pass}`;
         const pooled = videoPool.get(key);
         if (pooled) {
-          // For single-item mobile, switch from padding-top to aspect-ratio
           if (isSingle && currentlyMobile) {
+            // Single-item mobile: use aspect-ratio so max-height constraints work
             const pct = parseFloat(item.ratio) || 56.25;
-            pooled.style.paddingTop = '';
-            pooled.style.height = 'auto';
-            pooled.style.aspectRatio = `${(100 / pct).toFixed(3)} / 1`;
+            pooled.style.paddingTop   = '';
+            pooled.style.height       = 'auto';
+            pooled.style.aspectRatio  = `${(100 / pct).toFixed(3)} / 1`;
+          } else {
+            // Multi-item or desktop: restore padding-top trick (reset any single-item overrides)
+            pooled.style.paddingTop   = item.ratio || '56.25%';
+            pooled.style.height       = '';
+            pooled.style.aspectRatio  = '';
           }
           leftPanel.appendChild(pooled);
           triggerPlay(key);
@@ -307,9 +312,9 @@ function buildLeftPanel(proj) {
         const el = makeVideoEl(item);
         if (isSingle && currentlyMobile) {
           const pct = parseFloat(item.ratio) || 56.25;
-          el.style.paddingTop = '';
-          el.style.height = 'auto';
-          el.style.aspectRatio = `${(100 / pct).toFixed(3)} / 1`;
+          el.style.paddingTop   = '';
+          el.style.height       = 'auto';
+          el.style.aspectRatio  = `${(100 / pct).toFixed(3)} / 1`;
         }
         el.dataset.vkey = key;
         videoPool.set(key, el);
@@ -334,18 +339,19 @@ function buildLeftPanel(proj) {
 
 // ─── MEASURE ─────────────────────────────────────────
 function measure() {
-  // Use the first visible (non-display:none) column to sample thumb dimensions
-  const sampleCol = cols.find(c => c.offsetParent !== null) || cols[0];
-  const thumb = sampleCol.querySelector('.portfolio-thumb');
-  if (thumb) {
-    thumbH = thumb.getBoundingClientRect().height;
-    const rightGap = window.innerWidth <= 599 ? 12 : RIGHT_GAP;
-    // Per-column one-set height based on actual item count (excluding clone pass)
-    cols.forEach((col, i) => {
-      const n = col.querySelectorAll('.portfolio-thumb:not([data-clone])').length;
-      rightOneSetHs[i] = n > 0 ? n * (thumbH + rightGap) : 1;
-    });
-  }
+  // Compute thumbH from column width + CSS aspect-ratio — immune to CSS transforms
+  // (getBoundingClientRect returns scaled values when is-scrolling applies scale: 0.714,
+  //  which makes rightOneSetHs wrong and causes visible wrap jumps)
+  const isMobM  = window.innerWidth <= 599;
+  const colWM   = isMobM ? (window.innerWidth - 20) / 2 : 140;
+  const rightGap = isMobM ? 12 : RIGHT_GAP;
+  thumbH = colWM * (632 / 808);
+
+  // Per-column one-set height based on actual item count (excluding clone pass)
+  cols.forEach((col, i) => {
+    const n = col.querySelectorAll('.portfolio-thumb:not([data-clone])').length;
+    rightOneSetHs[i] = n > 0 ? n * (thumbH + rightGap) : 1;
+  });
 
   const leftImgs = Array.from(leftPanel.querySelectorAll('.portfolio-left-img')).slice(0, leftContentCount);
   if (leftImgs.length > 0) {

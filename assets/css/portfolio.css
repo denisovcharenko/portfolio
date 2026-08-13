@@ -546,23 +546,16 @@ img.portfolio-left-img,
     gap: 0;
   }
 
+  /* Single item fills full width, natural height — no cropping of any kind */
   .portfolio-left.single-item .portfolio-left-img {
     width: 100%;
-    max-height: 80dvh;
+    height: auto;
     flex-shrink: 0;
   }
 
-  /* Image: let browser constrain height via object-fit */
-  .portfolio-left.single-item img.portfolio-left-img {
-    height: auto;
-    max-height: 80dvh;
-    object-fit: contain;
-  }
-
-  /* Video wrapper: aspect-ratio set via JS for single-item, just limit height */
-  .portfolio-left.single-item .portfolio-left-img.is-video {
-    width: 100%;
-    max-height: 80dvh;
+  /* Video inner element: contain not cover, so video content isn't cropped */
+  .portfolio-left.single-item .portfolio-left-img.is-video video {
+    object-fit: contain !important;
   }
 
   .portfolio-left-img {
