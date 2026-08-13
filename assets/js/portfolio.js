@@ -619,7 +619,7 @@ function onWheel(e) {
 
 // ─── CLICK ───────────────────────────────────────────
 function onThumbClick(e) {
-  if (MOBILE && mobileCaseOpen) return;
+  if (MOBILE && (mobileCaseOpen || mobileClosing)) return;
   let thumb = e.target.closest('.portfolio-thumb');
   if (!thumb) {
     // .portfolio-thumbs container is pointer-events:none so clicks near but not on a
@@ -776,6 +776,7 @@ async function init() {
 
 // ─── MOBILE ──────────────────────────────────────────
 let mobileCaseOpen = false;
+let mobileClosing  = false; // true while close animation is running
 const leftClip = document.getElementById('portfolio-left-clip');
 
 function openMobileCase(idx) {
@@ -834,7 +835,9 @@ function mobileLoopScroll() {
 }
 
 function closeMobileCase() {
-  mobileCaseOpen = false;
+  if (!mobileCaseOpen || mobileClosing) return; // already closing or closed
+  mobileClosing = true;
+
   leftClip.removeEventListener('scroll', mobileLoopScroll);
   leftClip._loopActive = false;
   leftClip._loopH = 0;
@@ -849,9 +852,9 @@ function closeMobileCase() {
   gsap.to(leftClip, {
     x: '100%', duration: 0.30, ease: 'power2.inOut',
     onComplete: () => {
+      mobileCaseOpen = false;
+      mobileClosing  = false;
       leftClip.classList.remove('mobile-open');
-      // Keep GSAP x:100% transform in place — do NOT clearProps, or the panel
-      // snaps back to its CSS position (position:fixed inset:0) and covers the screen.
       leftClip.scrollTop = 0;
     },
   });
