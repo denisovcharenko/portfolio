@@ -619,6 +619,7 @@ function onWheel(e) {
 
 // ─── CLICK ───────────────────────────────────────────
 function onThumbClick(e) {
+  if (MOBILE && mobileCaseOpen) return;
   let thumb = e.target.closest('.portfolio-thumb');
   if (!thumb) {
     // .portfolio-thumbs container is pointer-events:none so clicks near but not on a
