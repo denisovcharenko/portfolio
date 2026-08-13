@@ -246,7 +246,7 @@ function buildLeftPanel(proj) {
 
   leftContentCount = items.length;
 
-  const passes = 2;
+  const passes = items.length > 1 ? 2 : 1;
   for (let pass = 0; pass < passes; pass++) {
     items.forEach((item, ci) => {
       if (item.type === 'video') {
@@ -345,6 +345,15 @@ function updateDescription(idx) {
   if (descText) {
     const escaped = (proj.description || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
     descText.innerHTML = escaped.split(/\n\n+/).map(p => `<p>${p.replace(/\n/g,'<br>')}</p>`).join('') || '';
+  }
+  const descLink = document.getElementById('desc-link');
+  if (descLink) {
+    if (proj.url) {
+      descLink.href = proj.url;
+      descLink.style.display = '';
+    } else {
+      descLink.style.display = 'none';
+    }
   }
   if (!proj.description && descOpen) setDescOpen(false);
 }
@@ -488,7 +497,9 @@ function tick() {
 
   // ── Left panel + crosshair — desktop only ────────
   if (!MOBILE) {
-    if (!window.__portfolioFreezeLeft) {
+    if (leftContentCount <= 1) {
+      leftLY = 0; leftTarget = 0; leftVel = 0;
+    } else if (!window.__portfolioFreezeLeft) {
       leftTarget += leftVel;
       leftVel *= lcl('friction', FRICTION);
       if (Math.abs(leftVel) < MIN_VEL) leftVel = 0;
@@ -620,6 +631,7 @@ function applyFileData() {
     if (saved.name        !== undefined) target.name        = saved.name;
     if (saved.color)                     target.color       = saved.color;
     if (saved.description !== undefined) target.description = saved.description;
+    if (saved.url         !== undefined) target.url         = saved.url;
     if (saved.thumbnail   !== undefined) target.thumbnail   = saved.thumbnail;
     if (saved.content)                   target.content     = saved.content;
   });

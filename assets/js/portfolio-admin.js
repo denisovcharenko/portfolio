@@ -212,6 +212,7 @@
         if (saved.name        !== undefined) target.name        = saved.name;
         if (saved.color)                     target.color       = saved.color;
         if (saved.description !== undefined) target.description = saved.description;
+        if (saved.url         !== undefined) target.url         = saved.url;
         if (saved.thumbnail   !== undefined) target.thumbnail   = saved.thumbnail;
         if (saved.content)                   target.content     = saved.content;
       }
@@ -271,6 +272,11 @@
         <div class="af">
           <label>Опис</label>
           <textarea id="af-desc" rows="3" placeholder="Короткий опис кейсу..."></textarea>
+        </div>
+
+        <div class="af">
+          <label>Посилання на проєкт</label>
+          <input type="text" id="af-url" placeholder="https://...">
         </div>
 
         <div class="af">
@@ -384,6 +390,7 @@
     panel.querySelector('#af-name').value                = proj.name || '';
     panel.querySelector('#af-color').value               = proj.color || '#888888';
     panel.querySelector('#af-desc').value                = proj.description || '';
+    panel.querySelector('#af-url').value                 = proj.url || '';
 
     const thumbImg  = panel.querySelector('#af-thumb-img');
     const thumbHint = panel.querySelector('#af-thumb-hint');
@@ -717,6 +724,7 @@
     proj.name        = panel.querySelector('#af-name').value.trim();
     proj.color       = panel.querySelector('#af-color').value;
     proj.description = panel.querySelector('#af-desc').value.trim();
+    proj.url         = panel.querySelector('#af-url').value.trim();
     const tp         = panel.querySelector('#af-thumb-path').value.trim();
     if (tp) { proj.thumbnail = tp; proj._thumbId = null; }
 
@@ -732,6 +740,7 @@
       name:        proj.name,
       color:       proj.color,
       description: proj.description,
+      url:         proj.url || '',
       thumbnail:   proj._thumbId ? { id: proj._thumbId } : proj.thumbnail,
       content: (proj.content || []).map(item => {
         if (item.type === 'video') return {
@@ -847,6 +856,7 @@
       lines.push(`    thumbnail: ${thumb},`);
       lines.push(`    content: [\n${allContent}\n    ],`);
       lines.push(`    description: '${desc}',`);
+      if (proj.url) lines.push(`    url: '${proj.url}',`);
       lines.push(`  },`);
     });
     lines.push('];');
