@@ -587,20 +587,19 @@ function onWheel(e) {
 function onThumbClick(e) {
   let thumb = e.target.closest('.portfolio-thumb');
   if (!thumb) {
-    // Click landed in the gap between cards or in the top dead-zone created by the
-    // pit/warp 3D effect shifting cards down from the column container top.
-    // Find the nearest visible thumb in this column.
-    const col = e.target.closest('.portfolio-thumbs');
-    if (col) {
-      let best = null, bestDist = Infinity;
-      col.querySelectorAll('.portfolio-thumb').forEach(t => {
-        const r = t.getBoundingClientRect();
-        if (r.bottom < 0 || r.top > window.innerHeight) return;
-        const dist = Math.abs((r.top + r.bottom) / 2 - e.clientY);
-        if (dist < bestDist) { bestDist = dist; best = t; }
-      });
-      if (best && bestDist < 80) thumb = best;
-    }
+    // .portfolio-thumbs container is pointer-events:none so clicks near but not on a
+    // card reach .portfolio. Catch clicks within 30px of any card — covers the ~17px
+    // dead zone above the first card caused by the pit 3D effect shifting cards down.
+    let best = null, bestDist = Infinity;
+    document.querySelectorAll('.portfolio-thumb').forEach(t => {
+      const r = t.getBoundingClientRect();
+      if (r.bottom < 0 || r.top > window.innerHeight) return;
+      const dx = Math.max(0, r.left - e.clientX, e.clientX - r.right);
+      const dy = Math.max(0, r.top - e.clientY, e.clientY - r.bottom);
+      const dist = Math.sqrt(dx * dx + dy * dy);
+      if (dist < bestDist) { bestDist = dist; best = t; }
+    });
+    if (best && bestDist < 30) thumb = best;
   }
   if (!thumb) return;
   const idx = parseInt(thumb.dataset.globalIdx ?? 0, 10);

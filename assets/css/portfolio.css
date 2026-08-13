@@ -198,9 +198,8 @@ img.portfolio-left-img,
   align-items: center;
   padding: 0;
   transform-style: preserve-3d;
-  pointer-events: auto;
+  pointer-events: none;
   will-change: transform;
-  cursor: pointer;
 }
 
 /* Anchored from right — all columns start within .portfolio bounds (overflow:hidden clips hit areas) */
@@ -213,6 +212,7 @@ img.portfolio-left-img,
   aspect-ratio: 808 / 632;
   flex-shrink: 0;
   cursor: pointer;
+  pointer-events: auto;
   display: block;
   background-size: cover;
   background-position: center;
