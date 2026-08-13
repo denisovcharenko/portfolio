@@ -214,11 +214,28 @@ function buildColumns() {
     colProjs[currentActiveColIdxs[i % currentActiveColIdxs.length]].push(proj);
   });
 
+  // Estimate thumb height + gap to compute minimum passes needed so the
+  // column always extends beyond the viewport (prevents blank-space jumps).
+  const isMob   = window.innerWidth <= 599;
+  const colW    = isMob ? (window.innerWidth - 20) / 2 : 140;
+  const estH    = colW * (632 / 808); // thumb aspect ratio 808:632
+  const estGap  = isMob ? 12 : 80;
+  const vh      = window.innerHeight;
+
   cols.forEach((col, ci) => {
     col.innerHTML = '';
     const items = colProjs[ci];
     if (items.length === 0) return;
-    const passes = items.length > 1 ? 2 : 1;
+
+    let passes;
+    if (items.length === 1) {
+      passes = 1; // single item — no infinite scroll
+    } else {
+      const oneSetH = items.length * (estH + estGap);
+      // Need: passes * oneSetH >= vh + oneSetH  →  passes >= 1 + vh/oneSetH
+      passes = Math.max(2, Math.ceil(1 + (vh + estGap) / oneSetH));
+    }
+
     for (let pass = 0; pass < passes; pass++) {
       items.forEach(proj => {
         const el = document.createElement('div');
@@ -229,7 +246,7 @@ function buildColumns() {
           el.style.backgroundColor = proj.color;
         }
         el.dataset.globalIdx = proj.idx;
-        if (pass === 1) el.dataset.clone = '1';
+        if (pass > 0) el.dataset.clone = '1'; // all passes after first are clones
         col.appendChild(el);
       });
     }
@@ -265,19 +282,35 @@ function buildLeftPanel(proj) {
     : Array.from({ length: 4 }, () => ({ type: 'color', color: proj ? proj.color : '#E8917A' }));
 
   leftContentCount = items.length;
+  const isSingle = items.length === 1;
+  // Single-item mode: center the one item on mobile (class drives CSS)
+  leftPanel.classList.toggle('single-item', isSingle);
 
-  const passes = items.length > 1 ? 2 : 1;
+  const passes = isSingle ? 1 : 2;
   for (let pass = 0; pass < passes; pass++) {
     items.forEach((item, ci) => {
       if (item.type === 'video') {
         const key = `v-${proj.idx}-${ci}-${pass}`;
         const pooled = videoPool.get(key);
         if (pooled) {
+          // For single-item mobile, switch from padding-top to aspect-ratio
+          if (isSingle && currentlyMobile) {
+            const pct = parseFloat(item.ratio) || 56.25;
+            pooled.style.paddingTop = '';
+            pooled.style.height = 'auto';
+            pooled.style.aspectRatio = `${(100 / pct).toFixed(3)} / 1`;
+          }
           leftPanel.appendChild(pooled);
           triggerPlay(key);
           return;
         }
         const el = makeVideoEl(item);
+        if (isSingle && currentlyMobile) {
+          const pct = parseFloat(item.ratio) || 56.25;
+          el.style.paddingTop = '';
+          el.style.height = 'auto';
+          el.style.aspectRatio = `${(100 / pct).toFixed(3)} / 1`;
+        }
         el.dataset.vkey = key;
         videoPool.set(key, el);
         leftPanel.appendChild(el);
