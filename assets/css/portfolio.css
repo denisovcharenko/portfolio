@@ -201,9 +201,9 @@ img.portfolio-left-img,
   pointer-events: auto;
 }
 
-/* Anchored from right — fixed gutter, no overlap at any VW */
-.portfolio-thumbs.col-1 { right: 330px; top: -27px; }
-.portfolio-thumbs.col-2 { right: 170px; top: -9px;  }
+/* Anchored from right — all columns start within .portfolio bounds (overflow:hidden clips hit areas) */
+.portfolio-thumbs.col-1 { right: 330px; top:   0px; }
+.portfolio-thumbs.col-2 { right: 170px; top:   0px; }
 .portfolio-thumbs.col-3 { right:  10px; top:  10px; }
 
 .portfolio-thumb {
