@@ -649,11 +649,9 @@
     const match = iSrc.match(/\/embed\/\d+\/([a-f0-9-]{36})/);
     if (!match) return null;
     const videoId = match[1];
-    const ratio   = (wrapper && wrapper.style.paddingTop) || '56.25%';
     return {
       type:  'video',
       src:   `https://${CDN_HOST}/${videoId}/play_720p.mp4`,
-      ratio,
       thumb: `https://${CDN_HOST}/${videoId}/thumbnail.jpg`,
     };
   }
@@ -746,7 +744,6 @@
         if (item.type === 'video') return {
           type:  'video',
           src:   item.src   || null,
-          ratio: item.ratio || null,
           thumb: item.thumb || null,
           embed: item.embed || null,
         };
@@ -835,7 +832,6 @@
         if (item.type === 'video') {
           if (item.src) {
             const parts = [`type: 'video'`, `src: ${JSON.stringify(item.src)}`];
-            if (item.ratio) parts.push(`ratio: ${JSON.stringify(item.ratio)}`);
             if (item.thumb) parts.push(`thumb: ${JSON.stringify(item.thumb)}`);
             return `    { ${parts.join(', ')} }`;
           }

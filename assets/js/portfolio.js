@@ -158,7 +158,7 @@ const cols        = [
 function makeVideoEl(item) {
   const el = document.createElement('div');
   el.className = 'portfolio-left-img is-video';
-  el.style.paddingTop = item.ratio || '56.25%';
+  el.style.paddingTop = '56.25%'; // 16:9 default — updated on loadedmetadata
 
   const video = document.createElement('video');
   video.muted = true;
@@ -170,6 +170,18 @@ function makeVideoEl(item) {
   video.style.cssText = 'position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;pointer-events:none;';
   if (item.thumb) video.poster = item.thumb;
   video.src = item.src;
+
+  // Auto-detect real aspect ratio once metadata loads — no manual ratio field needed
+  video.addEventListener('loadedmetadata', () => {
+    const w = video.videoWidth, h = video.videoHeight;
+    if (!w || !h) return;
+    el._naturalPct = h / w * 100; // store as %-of-width for padding-top trick
+    if (el.style.aspectRatio) {
+      el.style.aspectRatio = `${w} / ${h}`;
+    } else {
+      el.style.paddingTop = `${el._naturalPct.toFixed(4)}%`;
+    }
+  }, { once: true });
 
   el.appendChild(video);
   return el;
@@ -294,16 +306,17 @@ function buildLeftPanel(proj) {
         const pooled = videoPool.get(key);
         if (pooled) {
           if (isSingle && currentlyMobile) {
-            // Single-item mobile: use aspect-ratio so max-height constraints work
-            const pct = parseFloat(item.ratio) || 56.25;
-            pooled.style.paddingTop   = '';
-            pooled.style.height       = 'auto';
-            pooled.style.aspectRatio  = `${(100 / pct).toFixed(3)} / 1`;
+            // Single-item mobile: CSS aspect-ratio (auto-detected or default 16:9)
+            const v = pooled.querySelector('video');
+            const w = v && v.videoWidth, h = v && v.videoHeight;
+            pooled.style.paddingTop  = '';
+            pooled.style.height      = 'auto';
+            pooled.style.aspectRatio = (w && h) ? `${w} / ${h}` : `${(100 / (pooled._naturalPct || 56.25)).toFixed(3)} / 1`;
           } else {
-            // Multi-item or desktop: restore padding-top trick (reset any single-item overrides)
-            pooled.style.paddingTop   = item.ratio || '56.25%';
-            pooled.style.height       = '';
-            pooled.style.aspectRatio  = '';
+            // Multi-item or desktop: padding-top trick with auto-detected ratio
+            pooled.style.paddingTop  = `${(pooled._naturalPct || 56.25).toFixed(4)}%`;
+            pooled.style.height      = '';
+            pooled.style.aspectRatio = '';
           }
           leftPanel.appendChild(pooled);
           triggerPlay(key);
@@ -311,10 +324,9 @@ function buildLeftPanel(proj) {
         }
         const el = makeVideoEl(item);
         if (isSingle && currentlyMobile) {
-          const pct = parseFloat(item.ratio) || 56.25;
-          el.style.paddingTop   = '';
-          el.style.height       = 'auto';
-          el.style.aspectRatio  = `${(100 / pct).toFixed(3)} / 1`;
+          el.style.paddingTop  = '';
+          el.style.height      = 'auto';
+          el.style.aspectRatio = '1.778 / 1'; // 16:9 default — updated by loadedmetadata
         }
         el.dataset.vkey = key;
         videoPool.set(key, el);
