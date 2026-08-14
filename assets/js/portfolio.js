@@ -819,8 +819,7 @@ function openMobileCase(idx) {
 
   if (descWrap) descWrap.classList.add('mobile-desc-on');
 
-  // Infinity scroll: teleport when crossing 20%/80% of the doubled content.
-  // _loopH is cached and updated via ResizeObserver — never read scrollHeight in the hot path.
+  // Infinity scroll: set up immediately so it's ready when wipe panel exits
   requestAnimationFrame(() => {
     const updateLoopH = (recenter) => {
       const loopH = leftClip.scrollHeight / 2;
@@ -837,7 +836,6 @@ function openMobileCase(idx) {
     leftClip.addEventListener('scroll', mobileLoopScroll, { passive: true });
     updateLoopH(true);
 
-    // Keep _loopH fresh as tall images load and expand the container
     const ro = new ResizeObserver(() => updateLoopH(false));
     ro.observe(leftPanel);
     leftClip._loopRO = ro;
@@ -846,7 +844,21 @@ function openMobileCase(idx) {
   const closeBtn = document.getElementById('mobile-close');
   if (closeBtn) closeBtn.classList.add('visible');
 
-  gsap.fromTo(leftClip, { x: '100%' }, { x: '0%', duration: 0.38, ease: 'power3.out' });
+  // Place clip at final position — wipe panel covers it during transition
+  gsap.set(leftClip, { x: '0%' });
+
+  // Wipe panel: slides up from below, shows project name, exits upward to reveal case
+  const panel    = document.querySelector('[data-transition-panel]');
+  const label    = document.querySelector('[data-transition-label]');
+  const labelTxt = document.querySelector('[data-transition-label-text]');
+  if (labelTxt) labelTxt.textContent = proj.name || '';
+
+  const tl = gsap.timeline();
+  tl.fromTo(panel, { yPercent: 100 }, { yPercent: 0,    duration: 0.42, ease: 'power3.inOut' }, 0);
+  tl.fromTo(label, { autoAlpha: 0  }, { autoAlpha: 1,   duration: 0.18 }, 0.28);
+  tl.to(panel,                         { yPercent: -100, duration: 0.42, ease: 'power3.inOut' }, 0.60);
+  tl.to(label,                         { autoAlpha: 0,   duration: 0.18 }, 0.60);
+  tl.set(panel, { yPercent: 100 }); // reset below viewport for next use
 }
 
 function mobileLoopScroll() {

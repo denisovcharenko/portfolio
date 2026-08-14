@@ -534,19 +534,19 @@ img.portfolio-left-img,
     overflow: visible;
   }
 
-  /* Single content item — center it vertically in the viewport */
+  /* Single content item — center it vertically, items stretch to full width */
   .portfolio-left.single-item {
     min-height: 100dvh;
     display: flex;
     flex-direction: column;
-    align-items: center;
+    align-items: stretch;
     justify-content: center;
     padding-top: 60px;
     padding-bottom: 60px;
     gap: 0;
   }
 
-  /* Single item fills full width, natural height — no cropping of any kind */
+  /* Single item: full width, natural height, no cropping */
   .portfolio-left.single-item .portfolio-left-img {
     width: 100%;
     height: auto;
@@ -594,65 +594,40 @@ img.portfolio-left-img,
   }
 }
 
-/* ─── PROGRESSIVE BLUR (bottom) ──────────────────── */
 
-.progressive-blur {
-  z-index: 9;
+/* ─── MOBILE PAGE WIPE TRANSITION ────────────────── */
+
+.transition {
+  z-index: 300;
   pointer-events: none;
-  isolation: isolate;
-  contain: paint;
-  width: 100%;
-  height: 15em;
-  transform-style: preserve-3d;
   position: fixed;
-  bottom: 0;
-  left: 0;
-  overflow: hidden;
-  transform: translateZ(0);
+  inset: 0;
+  overflow: clip;
+  display: none;
 }
 
-.progressive-blur__layer {
+@media (max-width: 599px) {
+  .transition { display: block; }
+}
+
+.transition__panel {
+  background-color: #30463e;
+  display: flex;
+  justify-content: center;
+  align-items: center;
   width: 100%;
   height: 100%;
   position: absolute;
+  top: 0;
+  left: 0;
+  will-change: transform;
 }
 
-.progressive-blur__layer.is--1 {
-  -webkit-backdrop-filter: blur(.09375em);
-  backdrop-filter: blur(.09375em);
-  -webkit-mask: linear-gradient(#0000 50%, #000 62.5% 75%, #0000 87.5%);
-  mask: linear-gradient(#0000 50%, #000 62.5% 75%, #0000 87.5%);
-}
-
-.progressive-blur__layer.is--2 {
-  -webkit-backdrop-filter: blur(.1875em);
-  backdrop-filter: blur(.1875em);
-  -webkit-mask: linear-gradient(#0000 62.5%, #000 75% 87.5%, #0000 100%);
-  mask: linear-gradient(#0000 62.5%, #000 75% 87.5%, #0000 100%);
-}
-
-.progressive-blur__layer.is--3 {
-  -webkit-backdrop-filter: blur(.375em);
-  backdrop-filter: blur(.375em);
-  -webkit-mask: linear-gradient(#0000 75%, #000 87.5% 100%);
-  mask: linear-gradient(#0000 75%, #000 87.5% 100%);
-}
-
-.progressive-blur__layer.is--4 {
-  -webkit-backdrop-filter: blur(.75em);
-  backdrop-filter: blur(.75em);
-  -webkit-mask: linear-gradient(#0000 82%, #000 92% 100%);
-  mask: linear-gradient(#0000 82%, #000 92% 100%);
-}
-
-.progressive-blur__layer.is--5 {
-  -webkit-backdrop-filter: blur(1.5em);
-  backdrop-filter: blur(1.5em);
-  -webkit-mask: linear-gradient(#0000 88%, #000 100%);
-  mask: linear-gradient(#0000 88%, #000 100%);
-}
-
-/* Progressive blur — hide on mobile (nav is at top, blur at bottom interferes with close btn) */
-@media (max-width: 599px) {
-  .progressive-blur { display: none; }
+.transition__label {
+  color: #cbe88a;
+  text-transform: uppercase;
+  font-family: 'Inter', sans-serif;
+  font-size: 1.5em;
+  font-weight: 700;
+  letter-spacing: -0.5px;
 }
